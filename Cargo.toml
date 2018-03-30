@@ -2,5 +2,7 @@
 name = "assembler"
 version = "0.1.0"
 authors = ["Jiří Šebele <sindriava@gmail.com>"]
+build = "build.rs"
 
-[dependencies]
+[build-dependencies]
+peg = { git = "https://github.com/kevinmehall/rust-peg/", features = ["formatted_output"] }
