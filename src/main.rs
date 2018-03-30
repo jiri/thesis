@@ -1,5 +1,10 @@
+extern crate clap;
+
+use clap::{App,Arg};
+
 use std::collections::HashMap;
-use std::fmt::Write;
+use std::io::prelude::*;
+use std::fs::File;
 
 mod grammar;
 use grammar::*;
@@ -68,19 +73,28 @@ impl Compiler {
 }
 
 fn main() {
-    let source = r#"
-        .org $10
-            .db 01, 23, 45, 67, 89, AB, CD
+    let matches = App::new(env!("CARGO_PKG_NAME"))
+        .version(env!("CARGO_PKG_VERSION"))
+        .arg(Arg::with_name("file")
+            .value_name("FILE")
+            .help("Path to the source file")
+            .required(true)
+            .takes_value(true))
+        .arg(Arg::with_name("output")
+            .value_name("OUTPUT")
+            .short("o")
+            .long("output")
+            .help("Path to the output file")
+            .required(false)
+            .takes_value(true))
+        .get_matches();
 
-        .org 0
-            add R0, R1
+    let filename = matches.value_of("file").expect("File name was not provided");
+    let mut file = File::open(filename).expect("Unable to open the file");
+    let mut source = String::new();
+    file.read_to_string(&mut source).expect("Unable to read the file");
 
-        loop:
-            addi R1, 12
-            jmp loop
-    "#;
-
-    match program(source) {
+    match program(&source) {
         Ok(lines) => {
             let mut compiler = Compiler::new();
 
@@ -92,13 +106,13 @@ fn main() {
 
             let mut s = String::new();
             for &byte in compiler.output.iter() {
+                use std::fmt::Write;
                 write!(&mut s, "{:02x} ", byte).expect("Unable to write");
             }
-            println!("{}", s);
 
-            println!("{:#?}", compiler.label_map);
-
-            // compiler.write_out("filename.bin");11
+            let outfile = matches.value_of("output").unwrap_or("out.bin");
+            let mut file = File::create(outfile).expect("Failed to create output file");
+            file.write_all(&compiler.output).expect("Failed to write file");
         },
         Err(e) => {
             println!("Parse error: {:#?}", e);
