@@ -7,6 +7,7 @@ pub struct Register(pub u8);
 pub enum Instruction {
     Db(Vec<u8>),
     Org(u16),
+    Nop,
     Add(Register, Register),
     Addi(Register, u16),
     Jmp(Label),

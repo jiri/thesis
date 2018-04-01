@@ -43,6 +43,9 @@ db -> Instruction
 org -> Instruction
     = ".org" ws+ addr:u16 { Instruction::Org(addr) }
 
+nop -> Instruction
+    = "nop" { Instruction::Nop }
+
 add -> Instruction
     = "add" ws+ r0:register comma r1:register { Instruction::Add(r0, r1) }
 
@@ -56,6 +59,12 @@ jmp -> Instruction
 
 // Instruction sets {{{
 
+basic -> Instruction
+    = nop
+
+special -> Instruction
+    = db / org
+
 arithmetic -> Instruction
     = add / addi
 
@@ -67,7 +76,7 @@ label_definition -> Label
     = l:label ws* ":" { l }
 
 instruction -> Instruction
-    = db / org / arithmetic / jmp
+    = basic / special / arithmetic / jmp
 
 comment = ";" [^\n]*
 
