@@ -11,7 +11,7 @@ use grammar::*;
 
 struct Compiler {
     cursor: u16,
-    output: [u8; 65536],
+    output: [u8; 32],
     label_map: HashMap<Label, u16>,
     needs_label: Vec<(u16, Label)>,
 }
@@ -20,7 +20,7 @@ impl Compiler {
     fn new() -> Self {
         Self {
             cursor: 0,
-            output: [0; 65536],
+            output: [0; 32],
             label_map: HashMap::new(),
             needs_label: Vec::new(),
         }
