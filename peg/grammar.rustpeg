@@ -43,6 +43,9 @@ address -> Address
 db -> Instruction
     = ".db" ws+ bs:byte ** comma { Instruction::Db(bs) }
 
+ds -> Instruction
+    = ".ds" ws+ len:u16 { Instruction::Ds(len) }
+
 org -> Instruction
     = ".org" ws+ addr:u16 { Instruction::Org(addr) }
 

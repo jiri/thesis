@@ -12,6 +12,7 @@ pub enum Address {
 #[derive(Debug)]
 pub enum Instruction {
     Db(Vec<u8>),
+    Ds(u16),
     Org(u16),
     Nop,
     Mov(Register, Register),

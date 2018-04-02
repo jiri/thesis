@@ -47,6 +47,9 @@ impl Compiler {
                         self.write(&[ 0 ]);
                     }
                 },
+                Ds(len) => {
+                    self.cursor += len;
+                },
                 Org(pos) => {
                     self.cursor = pos;
                 },
