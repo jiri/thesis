@@ -44,18 +44,24 @@ impl Compiler {
                     self.write(&bs);
                     // Align to word
                     if bs.len() % 2 == 1 {
-                        self.write(&[0]);
+                        self.write(&[ 0 ]);
                     }
                 },
                 Org(pos) => {
                     self.cursor = pos;
                 },
-                Nop => self.write(&[ 0x00, 0x00 ]),
-                Add(r0, r1) => self.write(&[ 0x10, r0.0 << 4 | r1.0 ]),
-                Addi(r0, i) => self.write(&[ 0x11, r0.0, ((i & 0xff00) >> 8) as u8, (i & 0x00ff >> 0) as u8 ]),
+                Nop => {
+                    self.write(&[ 0x00, 0x00 ])
+                },
+                Add(r0, r1) => {
+                    self.write(&[ 0x10, r0.0 << 4 | r1.0 ])
+                },
+                Addi(r0, i) => {
+                    self.write(&[ 0x11, r0.0, ((i & 0xff00) >> 8) as u8, (i & 0x00ff >> 0) as u8 ])
+                },
                 Jmp(label) => {
                     self.needs_label.push((self.cursor + 2, label));
-                    self.write(&[ 0x20, 0, 0, 0]);
+                    self.write(&[ 0x20, 0, 0, 0 ]);
                 },
             }
         }
