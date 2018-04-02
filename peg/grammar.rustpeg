@@ -27,8 +27,13 @@ u16 -> u16 = u16_dec / u16_hex
 register -> Register
     = "R" v:$(digit*<1,2>) {? Register::new(v.parse::<u8>().unwrap()) }
 
-byte -> u8
-    = v:$(hexdigit*<1,2>) { u8::from_str_radix(v, 16).unwrap() }
+u8_dec -> u8
+    = s:$(digit+) {? u8::from_str_radix(s, 10).map_err(|_| "Error when parsing u8") }
+
+u8_hex -> u8
+    = "$" s:$(hexdigit+) {? u8::from_str_radix(s, 16).map_err(|_| "Error when parsing int") }
+
+u8 -> u8 = u8_dec / u8_hex
 
 label -> Label
     = i:$(identifier) { Label::from(i) }
@@ -41,7 +46,7 @@ address -> Address
 // Instructions {{{
 
 db -> Instruction
-    = ".db" ws+ bs:byte ** comma { Instruction::Db(bs) }
+    = ".db" ws+ bs:u8 ** comma { Instruction::Db(bs) }
 
 ds -> Instruction
     = ".ds" ws+ len:u16 { Instruction::Ds(len) }
