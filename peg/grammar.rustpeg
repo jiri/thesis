@@ -46,6 +46,12 @@ org -> Instruction
 nop -> Instruction
     = "nop" { Instruction::Nop }
 
+mov -> Instruction
+    = "mov" ws+ r0:register comma r1:register { Instruction::Mov(r0, r1) }
+
+movi -> Instruction
+    = "movi" ws+ r0:register comma i:u16 { Instruction::Movi(r0, i) }
+
 add -> Instruction
     = "add" ws+ r0:register comma r1:register { Instruction::Add(r0, r1) }
 
@@ -60,7 +66,7 @@ jmp -> Instruction
 // Instruction sets {{{
 
 basic -> Instruction
-    = nop
+    = nop / mov / movi
 
 special -> Instruction
     = db / org

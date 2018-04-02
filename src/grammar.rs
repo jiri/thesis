@@ -8,6 +8,8 @@ pub enum Instruction {
     Db(Vec<u8>),
     Org(u16),
     Nop,
+    Mov(Register, Register),
+    Movi(Register, u16),
     Add(Register, Register),
     Addi(Register, u16),
     Jmp(Label),

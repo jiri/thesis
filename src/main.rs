@@ -53,6 +53,12 @@ impl Compiler {
                 Nop => {
                     self.write(&[ 0x00, 0x00 ])
                 },
+                Mov(r0, r1) => {
+                    self.write(&[ 0x01, r0.0 << 4 | r1.0 ])
+                },
+                Movi(r0, i) => {
+                    self.write(&[ 0x02, r0.0, ((i & 0xff00) >> 8) as u8, (i & 0x00ff >> 0) as u8 ])
+                },
                 Add(r0, r1) => {
                     self.write(&[ 0x10, r0.0 << 4 | r1.0 ])
                 },
