@@ -33,6 +33,9 @@ byte -> u8
 label -> Label
     = i:$(identifier) { Label::from(i) }
 
+address -> Address
+    = l:label { Address::Label(l) } / u:u16_hex { Address::Immediate(u) }
+
 // }}}
 
 // Instructions {{{
@@ -61,18 +64,27 @@ addi -> Instruction
 jmp -> Instruction
     = "jmp" ws+ l:label { Instruction::Jmp(l) }
 
+load -> Instruction
+    = "load" ws+ r:register comma addr:address { Instruction::Load(r, addr) }
+
+store -> Instruction
+    = "store" ws+ addr:address comma r:register { Instruction::Store(addr, r) }
+
 // Instructions }}}
 
 // Instruction sets {{{
 
-basic -> Instruction
-    = nop / mov / movi
-
 special -> Instruction
     = db / org
 
+basic -> Instruction
+    = nop / mov / movi
+
 arithmetic -> Instruction
     = add / addi
+
+memory -> Instruction
+    = load / store
 
 // }}}
 
@@ -82,7 +94,7 @@ label_definition -> Label
     = l:label ws* ":" { l }
 
 instruction -> Instruction
-    = basic / special / arithmetic / jmp
+    = special / basic / arithmetic / memory / jmp
 
 comment = ";" [^\n]*
 

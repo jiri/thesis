@@ -4,6 +4,12 @@ pub type Label = String;
 pub struct Register(pub u8);
 
 #[derive(Debug)]
+pub enum Address {
+    Label(Label),
+    Immediate(u16),
+}
+
+#[derive(Debug)]
 pub enum Instruction {
     Db(Vec<u8>),
     Org(u16),
@@ -12,6 +18,8 @@ pub enum Instruction {
     Movi(Register, u16),
     Add(Register, Register),
     Addi(Register, u16),
+    Load(Register, Address),
+    Store(Address, Register),
     Jmp(Label),
 }
 

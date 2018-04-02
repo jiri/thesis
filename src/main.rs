@@ -65,6 +65,28 @@ impl Compiler {
                 Addi(r0, i) => {
                     self.write(&[ 0x11, r0.0, ((i & 0xff00) >> 8) as u8, (i & 0x00ff >> 0) as u8 ])
                 },
+                Load(r0, addr) => {
+                    match addr {
+                        Address::Label(label) => {
+                            self.needs_label.push((self.cursor + 2, label));
+                            self.write(&[ 0x30, r0.0, 0x00, 0x00 ])
+                        },
+                        Address::Immediate(i) => {
+                            self.write(&[ 0x30, r0.0, ((i & 0xff00) >> 8) as u8, (i & 0x00ff >> 0) as u8 ])
+                        },
+                    }
+                },
+                Store(addr, r0) => {
+                    match addr {
+                        Address::Label(label) => {
+                            self.needs_label.push((self.cursor + 2, label));
+                            self.write(&[ 0x31, r0.0, 0x00, 0x00 ])
+                        },
+                        Address::Immediate(i) => {
+                            self.write(&[ 0x31, r0.0, ((i & 0xff00) >> 8) as u8, (i & 0x00ff >> 0) as u8 ])
+                        },
+                    }
+                },
                 Jmp(label) => {
                     self.needs_label.push((self.cursor + 2, label));
                     self.write(&[ 0x20, 0, 0, 0 ]);
