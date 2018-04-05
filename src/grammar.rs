@@ -19,6 +19,7 @@ pub enum Instruction {
     Movi(Register, u16),
     Add(Register, Register),
     Addi(Register, u16),
+    Addc(Register, Register),
     Load(Register, Address),
     Store(Address, Register),
     Jmp(Label),

@@ -68,6 +68,9 @@ impl Compiler {
                 Addi(r0, i) => {
                     self.write(&[ 0x11, r0.0, ((i & 0xff00) >> 8) as u8, (i & 0x00ff >> 0) as u8 ])
                 },
+                Addc(r0, r1) => {
+                    self.write(&[ 0x12, r0.0 << 4 | r1.0 ])
+                },
                 Load(r0, addr) => {
                     match addr {
                         Address::Label(label) => {

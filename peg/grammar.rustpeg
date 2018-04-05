@@ -69,6 +69,9 @@ add -> Instruction
 addi -> Instruction
     = "addi" ws+ r:register comma i:u16 { Instruction::Addi(r, i) }
 
+addc -> Instruction
+    = "addc" ws+ r0:register comma r1:register { Instruction::Addc(r0, r1) }
+
 jmp -> Instruction
     = "jmp" ws+ l:label { Instruction::Jmp(l) }
 
@@ -89,7 +92,7 @@ basic -> Instruction
     = nop / mov / movi
 
 arithmetic -> Instruction
-    = add / addi
+    = add / addi / addc
 
 memory -> Instruction
     = load / store
