@@ -144,6 +144,30 @@ impl Compiler {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_produces_output() {
+        let binary = Compiler::compile("add R0, R1");
+
+        assert_eq!(binary, Ok(vec![ 0x10, 0x01 ]));
+    }
+
+    #[test]
+    fn it_resolves_labels() {
+        let binary = Compiler::compile("
+            nop
+            foo:
+                nop
+                jmp foo
+        ");
+
+        assert_eq!(binary, Ok(vec![ 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x02 ]));
+    }
+}
+
 fn main() {
     let matches = App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
