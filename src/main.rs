@@ -117,6 +117,25 @@ impl Compiler {
             }
         }
     }
+
+    fn compile(source: &str) -> Result<Vec<u8>, String> {
+        match program(&source) {
+            Ok(lines) => {
+                let mut compiler = Compiler::new();
+
+                for line in lines {
+                    compiler.process(line);
+                }
+
+                compiler.resolve_labels();
+
+                Ok(compiler.output.to_vec())
+            },
+            Err(e) => {
+                Err(format!("{:#?}", e))
+            },
+        }
+    }
 }
 
 fn main() {
@@ -141,28 +160,14 @@ fn main() {
     let mut source = String::new();
     file.read_to_string(&mut source).expect("Unable to read the file");
 
-    match program(&source) {
-        Ok(lines) => {
-            let mut compiler = Compiler::new();
-
-            for line in lines {
-                compiler.process(line);
-            }
-
-            compiler.resolve_labels();
-
-            let mut s = String::new();
-            for &byte in compiler.output.iter() {
-                use std::fmt::Write;
-                write!(&mut s, "{:02x} ", byte).expect("Unable to write");
-            }
-
+    match Compiler::compile(&source) {
+        Ok(binary) => {
             let outfile = matches.value_of("output").unwrap_or("out.bin");
             let mut file = File::create(outfile).expect("Failed to create output file");
-            file.write_all(&compiler.output).expect("Failed to write file");
+            file.write_all(&binary).expect("Failed to write file");
         },
         Err(e) => {
-            println!("Parse error: {:#?}", e);
-        },
+            println!("{}", e);
+        }
     }
 }
