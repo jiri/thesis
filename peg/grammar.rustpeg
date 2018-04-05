@@ -73,7 +73,7 @@ addc -> Instruction
     = "addc" ws+ r0:register comma r1:register { Instruction::Addc(r0, r1) }
 
 jmp -> Instruction
-    = "jmp" ws+ l:label { Instruction::Jmp(l) }
+    = "jmp" ws+ addr:address { Instruction::Jmp(addr) }
 
 load -> Instruction
     = "load" ws+ r:register comma addr:address { Instruction::Load(r, addr) }

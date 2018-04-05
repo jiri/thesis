@@ -31,6 +31,24 @@ impl Compiler {
         self.cursor += bs.len() as u16;
     }
 
+    fn write_word(&mut self, word: u16) {
+        let hi_byte = ((word & 0xFF00) >> 8) as u8;
+        let lo_byte = ((word & 0x00FF) >> 0) as u8;
+        self.write(&[ hi_byte, lo_byte ]);
+    }
+
+    fn write_address(&mut self, addr: Address) {
+        match addr {
+            Address::Label(label) => {
+                self.needs_label.push((self.cursor, label));
+                self.write_word(0x0000);
+            },
+            Address::Immediate(i) => {
+                self.write_word(i);
+            },
+        }
+    }
+
     fn process(&mut self, line: Line) {
         if let Some(label) = line.label {
             self.label_map.insert(label, self.cursor);
@@ -60,42 +78,30 @@ impl Compiler {
                     self.write(&[ 0x01, r0.0 << 4 | r1.0 ])
                 },
                 Movi(r0, i) => {
-                    self.write(&[ 0x02, r0.0, ((i & 0xff00) >> 8) as u8, (i & 0x00ff >> 0) as u8 ])
+                    self.write(&[ 0x02, r0.0 ]);
+                    self.write_word(i);
                 },
                 Add(r0, r1) => {
                     self.write(&[ 0x10, r0.0 << 4 | r1.0 ])
                 },
                 Addi(r0, i) => {
-                    self.write(&[ 0x11, r0.0, ((i & 0xff00) >> 8) as u8, (i & 0x00ff >> 0) as u8 ])
+                    self.write(&[ 0x11, r0.0 ]);
+                    self.write_word(i);
                 },
                 Addc(r0, r1) => {
                     self.write(&[ 0x12, r0.0 << 4 | r1.0 ])
                 },
                 Load(r0, addr) => {
-                    match addr {
-                        Address::Label(label) => {
-                            self.needs_label.push((self.cursor + 2, label));
-                            self.write(&[ 0x30, r0.0, 0x00, 0x00 ])
-                        },
-                        Address::Immediate(i) => {
-                            self.write(&[ 0x30, r0.0, ((i & 0xff00) >> 8) as u8, (i & 0x00ff >> 0) as u8 ])
-                        },
-                    }
+                    self.write(&[ 0x30, r0.0 ]);
+                    self.write_address(addr);
                 },
                 Store(addr, r0) => {
-                    match addr {
-                        Address::Label(label) => {
-                            self.needs_label.push((self.cursor + 2, label));
-                            self.write(&[ 0x31, r0.0, 0x00, 0x00 ])
-                        },
-                        Address::Immediate(i) => {
-                            self.write(&[ 0x31, r0.0, ((i & 0xff00) >> 8) as u8, (i & 0x00ff >> 0) as u8 ])
-                        },
-                    }
+                    self.write(&[ 0x31, r0.0 ]);
+                    self.write_address(addr);
                 },
-                Jmp(label) => {
-                    self.needs_label.push((self.cursor + 2, label));
-                    self.write(&[ 0x20, 0, 0, 0 ]);
+                Jmp(addr) => {
+                    self.write(&[ 0x20, 0x00 ]);
+                    self.write_address(addr);
                 },
             }
         }

@@ -22,7 +22,7 @@ pub enum Instruction {
     Addc(Register, Register),
     Load(Register, Address),
     Store(Address, Register),
-    Jmp(Label),
+    Jmp(Address),
 }
 
 #[derive(Debug)]
