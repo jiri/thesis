@@ -129,7 +129,13 @@ impl Compiler {
 
                 compiler.resolve_labels();
 
-                Ok(compiler.output.to_vec())
+                /* Strip trailing zeroes */
+                let mut output = compiler.output.to_vec();
+                while output.last() == Some(&0) {
+                    output.pop();
+                }
+
+                Ok(output)
             },
             Err(e) => {
                 Err(format!("{:#?}", e))
