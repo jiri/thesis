@@ -125,29 +125,24 @@ impl Compiler {
         }
     }
 
-    fn compile(source: &str) -> Result<Vec<u8>, String> {
-        match program(&source) {
-            Ok(lines) => {
-                let mut compiler = Compiler::new();
+    fn compile(source: &str) -> Result<Vec<u8>, grammar::ParseError> {
+        let lines = try! { program(&source) };
 
-                for line in lines {
-                    compiler.process(line);
-                }
+        let mut compiler = Compiler::new();
 
-                compiler.resolve_labels();
-
-                /* Strip trailing zeroes */
-                let mut output = compiler.output.to_vec();
-                while output.last() == Some(&0) {
-                    output.pop();
-                }
-
-                Ok(output)
-            },
-            Err(e) => {
-                Err(format!("{:#?}", e))
-            },
+        for line in lines {
+            compiler.process(line);
         }
+
+        compiler.resolve_labels();
+
+        /* Strip trailing zeroes */
+        let mut output = compiler.output.to_vec();
+        while output.last() == Some(&0) {
+            output.pop();
+        }
+
+        Ok(output)
     }
 }
 
@@ -203,8 +198,8 @@ fn main() {
             let mut file = File::create(outfile).expect("Failed to create output file");
             file.write_all(&binary).expect("Failed to write file");
         },
-        Err(e) => {
-            println!("{}", e);
+        Err(err) => {
+            println!("Error on {}:{}:{}, expected one of {:?}", filename, err.line, err.column, err.expected);
         }
     }
 }
