@@ -49,6 +49,10 @@ impl Compiler {
         }
     }
 
+    fn write_registers(&mut self, r0: Register, r1: Register) {
+        self.write(&[ r0.0 << 4 | r1.0 ]);
+    }
+
     fn process(&mut self, line: Line) {
         if let Some(label) = line.label {
             self.label_map.insert(label, self.cursor);
@@ -72,24 +76,27 @@ impl Compiler {
                     self.cursor = pos;
                 },
                 Nop => {
-                    self.write(&[ 0x00, 0x00 ])
+                    self.write(&[ 0x00, 0x00 ]);
                 },
                 Mov(r0, r1) => {
-                    self.write(&[ 0x01, r0.0 << 4 | r1.0 ])
+                    self.write(&[ 0x01 ]);
+                    self.write_registers(r0, r1);
                 },
                 Movi(r0, i) => {
                     self.write(&[ 0x02, r0.0 ]);
                     self.write_word(i);
                 },
                 Add(r0, r1) => {
-                    self.write(&[ 0x10, r0.0 << 4 | r1.0 ])
+                    self.write(&[ 0x10 ]);
+                    self.write_registers(r0, r1);
                 },
                 Addi(r0, i) => {
                     self.write(&[ 0x11, r0.0 ]);
                     self.write_word(i);
                 },
                 Addc(r0, r1) => {
-                    self.write(&[ 0x12, r0.0 << 4 | r1.0 ])
+                    self.write(&[ 0x12 ]);
+                    self.write_registers(r0, r1);
                 },
                 Load(r0, addr) => {
                     self.write(&[ 0x30, r0.0 ]);
