@@ -41,6 +41,9 @@ label -> Label
 address -> Address
     = l:label { Address::Label(l) } / u:u16_hex { Address::Immediate(u) }
 
+flag -> Flag
+    = "z" { Flag::Z } / "o" { Flag::O }
+
 // }}}
 
 // Instructions {{{
@@ -81,6 +84,12 @@ load -> Instruction
 store -> Instruction
     = "store" ws+ addr:address comma r:register { Instruction::Store(addr, r) }
 
+brif -> Instruction
+    = "brif" ws+ f:flag comma addr:address { Instruction::Brif(f, addr) }
+
+brnif -> Instruction
+    = "brnif" ws+ f:flag comma addr:address { Instruction::Brnif(f, addr) }
+
 // Instructions }}}
 
 // Instruction sets {{{
@@ -97,6 +106,9 @@ arithmetic -> Instruction
 memory -> Instruction
     = load / store
 
+branching -> Instruction
+    = jmp / brif / brnif
+
 // }}}
 
 /// Basic constructs {{{
@@ -105,7 +117,7 @@ label_definition -> Label
     = l:label ws* ":" { l }
 
 instruction -> Instruction
-    = special / basic / arithmetic / memory / jmp
+    = special / basic / arithmetic / memory / branching
 
 comment = ";" [^\n]*
 

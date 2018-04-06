@@ -4,6 +4,12 @@ pub type Label = String;
 pub struct Register(pub u8);
 
 #[derive(Debug)]
+pub enum Flag {
+    Z,
+    O,
+}
+
+#[derive(Debug)]
 pub enum Address {
     Label(Label),
     Immediate(u16),
@@ -23,6 +29,8 @@ pub enum Instruction {
     Load(Register, Address),
     Store(Address, Register),
     Jmp(Address),
+    Brif(Flag, Address),
+    Brnif(Flag, Address),
 }
 
 #[derive(Debug)]

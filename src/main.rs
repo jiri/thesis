@@ -110,6 +110,14 @@ impl Compiler {
                     self.write(&[ 0x20, 0x00 ]);
                     self.write_address(addr);
                 },
+                Brif(flag, addr) => {
+                    self.write(&[ 0x21, match flag { Flag::Z => 0x00, Flag::O => 0x01 } ]);
+                    self.write_address(addr);
+                },
+                Brnif(flag, addr) => {
+                    self.write(&[ 0x22, match flag { Flag::Z => 0x00, Flag::O => 0x01 } ]);
+                    self.write_address(addr);
+                },
             }
         }
     }
