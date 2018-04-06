@@ -33,6 +33,17 @@ pub enum Instruction {
     Brnif(Flag, Address),
 }
 
+impl Instruction {
+    pub fn special(&self) -> bool {
+        use Instruction::*;
+
+        match self {
+            Db(_) | Ds(_) | Org(_) => true,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Line {
     pub label: Option<Label>,

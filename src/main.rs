@@ -14,6 +14,8 @@ struct Compiler {
     output: [u8; 32],
     label_map: HashMap<Label, u16>,
     needs_label: Vec<(u16, Label)>,
+    instruction_debug_symbols: Vec<(u16, usize)>,
+    label_debug_symbols: Vec<(String, usize)>,
 }
 
 impl Compiler {
@@ -23,6 +25,8 @@ impl Compiler {
             output: [0; 32],
             label_map: HashMap::new(),
             needs_label: Vec::new(),
+            instruction_debug_symbols: Vec::new(),
+            label_debug_symbols: Vec::new(),
         }
     }
 
@@ -53,14 +57,23 @@ impl Compiler {
         self.write(&[ r0.0 << 4 | r1.0 ]);
     }
 
-    fn process(&mut self, line: Line) {
+    fn process(&mut self, line_number: usize, line: Line) {
         if let Some(label) = line.label {
-            self.label_map.insert(label, self.cursor);
+            self.label_map.insert(label.clone(), self.cursor);
+
+            /* Write debug symbols */
+            self.label_debug_symbols.push((label.clone(), line_number));
         }
 
         if let Some(instruction) = line.instruction {
             use grammar::Instruction::*;
 
+            /* Write debug symbols */
+            if !instruction.special() {
+                self.instruction_debug_symbols.push((self.cursor, line_number));
+            }
+
+            /* Write the binary output */
             match instruction {
                 Db(bs) => {
                     self.write(&bs);
@@ -134,12 +147,11 @@ impl Compiler {
     }
 
     fn compile(source: &str) -> Result<Vec<u8>, grammar::ParseError> {
-        let lines = try! { program(&source) };
-
         let mut compiler = Compiler::new();
 
-        for line in lines {
-            compiler.process(line);
+        for (line_number, line_str) in source.split("\n").enumerate() {
+            let line = try! { line(&line_str) };
+            compiler.process(line_number, line);
         }
 
         compiler.resolve_labels();

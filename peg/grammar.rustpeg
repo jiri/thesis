@@ -121,10 +121,7 @@ instruction -> Instruction
 
 comment = ";" [^\n]*
 
-line -> Line
+pub line -> Line
     = ws* l:label_definition? ws* i:instruction? ws* comment? { Line { label: l, instruction: i } }
-
-pub program -> Vec<Line>
-    = line ** ("\n"+)
 
 // }}}
