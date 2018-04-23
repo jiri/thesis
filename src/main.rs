@@ -180,6 +180,9 @@ fn main() {
             .help("Path to the output file")
             .required(false)
             .takes_value(true))
+        .arg(Arg::with_name("stdout")
+            .long("stdout")
+            .help("Output the resulting binary to stdout"))
         .get_matches();
 
     let filename = matches.value_of("file").expect("File name was not provided");
@@ -192,9 +195,15 @@ fn main() {
 
     match Compiler::compile(&source) {
         Ok(binary) => {
-            let outfile = matches.value_of("output").unwrap_or("out.bin");
-            let mut file = File::create(outfile).expect("Failed to create output file");
-            file.write_all(&binary).expect("Failed to write file");
+            let res = if matches.is_present("stdout") {
+                io::stdout().write_all(&binary)
+            } else {
+                let outfile = matches.value_of("output").unwrap_or("out.bin");
+                let mut file = File::create(outfile).expect("Failed to create output file");
+                file.write_all(&binary)
+            };
+
+            res.expect("Failed to write file");
         },
         Err(err) => {
             println!("Error on {}:{}:{}, expected one of {:?}", filename, err.line, err.column, err.expected);
