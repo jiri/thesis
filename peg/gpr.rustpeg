@@ -131,7 +131,7 @@ address -> Address
             = unaryReg<"inc">
 
         dec -> Instruction
-            = unaryReg<"inc">
+            = unaryReg<"dec">
 
         and -> Instruction
             = binaryRegReg<"and">
