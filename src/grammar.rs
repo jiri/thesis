@@ -52,11 +52,11 @@ pub struct Line {
 
 impl Register {
     fn new(n: u8) -> Result<Register, &'static str> {
-        if n <= 16 {
+        if n <= 15 {
             Ok(Register(n))
         }
         else {
-            Err("register index between 0 and 16")
+            Err("register index between 0 and 15")
         }
     }
 }
