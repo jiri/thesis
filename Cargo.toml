@@ -6,6 +6,7 @@ build = "build.rs"
 
 [dependencies]
 clap = "*"
+lazy_static = "1.0.0"
 
 [build-dependencies]
 peg = { git = "https://github.com/kevinmehall/rust-peg/", features = ["formatted_output"] }

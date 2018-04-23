@@ -1,3 +1,5 @@
+#[macro_use]
+extern crate lazy_static;
 extern crate clap;
 
 use clap::{App,Arg};
@@ -14,8 +16,6 @@ struct Compiler {
     output: [u8; 32],
     label_map: HashMap<Label, u16>,
     needs_label: Vec<(u16, Label)>,
-    instruction_debug_symbols: Vec<(u16, usize)>,
-    label_debug_symbols: Vec<(String, usize)>,
 }
 
 impl Compiler {
@@ -25,8 +25,6 @@ impl Compiler {
             output: [0; 32],
             label_map: HashMap::new(),
             needs_label: Vec::new(),
-            instruction_debug_symbols: Vec::new(),
-            label_debug_symbols: Vec::new(),
         }
     }
 
@@ -57,21 +55,13 @@ impl Compiler {
         self.write(&[ r0.0 << 4 | r1.0 ]);
     }
 
-    fn process(&mut self, line_number: usize, line: Line) {
+    fn process(&mut self, line: Line) {
         if let Some(label) = line.label {
             self.label_map.insert(label.clone(), self.cursor);
-
-            /* Write debug symbols */
-            self.label_debug_symbols.push((label.clone(), line_number));
         }
 
         if let Some(instruction) = line.instruction {
             use grammar::Instruction::*;
-
-            /* Write debug symbols */
-            if !instruction.special() {
-                self.instruction_debug_symbols.push((self.cursor, line_number));
-            }
 
             /* Write the binary output */
             match instruction {
@@ -88,48 +78,26 @@ impl Compiler {
                 Org(pos) => {
                     self.cursor = pos;
                 },
-                Nop => {
-                    self.write(&[ 0x00, 0x00 ]);
+                Nullary(opcode) => {
+                    self.write(&[ opcode ]);
                 },
-                Mov(r0, r1) => {
-                    self.write(&[ 0x01 ]);
-                    self.write_registers(r0, r1);
+                UnaryReg(opcode, register) => {
+                    self.write(&[ opcode, register.0 ]);
                 },
-                Movi(r0, i) => {
-                    self.write(&[ 0x02, r0.0 ]);
-                    self.write_word(i);
+                UnaryAddr(opcode, address) => {
+                    self.write(&[ opcode ]);
+                    self.write_address(address);
                 },
-                Add(r0, r1) => {
-                    self.write(&[ 0x10 ]);
-                    self.write_registers(r0, r1);
+                BinaryRegIm(opcode, register, value) => {
+                    self.write(&[ opcode, register.0, value ]);
                 },
-                Addi(r0, i) => {
-                    self.write(&[ 0x11, r0.0 ]);
-                    self.write_word(i);
+                BinaryRegReg(opcode, register0, register1) => {
+                    self.write(&[ opcode ]);
+                    self.write_registers(register0, register1);
                 },
-                Addc(r0, r1) => {
-                    self.write(&[ 0x12 ]);
-                    self.write_registers(r0, r1);
-                },
-                Load(r0, addr) => {
-                    self.write(&[ 0x30, r0.0 ]);
-                    self.write_address(addr);
-                },
-                Store(addr, r0) => {
-                    self.write(&[ 0x31, r0.0 ]);
-                    self.write_address(addr);
-                },
-                Jmp(addr) => {
-                    self.write(&[ 0x20, 0x00 ]);
-                    self.write_address(addr);
-                },
-                Brif(flag, addr) => {
-                    self.write(&[ 0x21, match flag { Flag::Z => 0x00, Flag::O => 0x01 } ]);
-                    self.write_address(addr);
-                },
-                Brnif(flag, addr) => {
-                    self.write(&[ 0x22, match flag { Flag::Z => 0x00, Flag::O => 0x01 } ]);
-                    self.write_address(addr);
+                BinaryRegAddr(opcode, register, address) => {
+                    self.write(&[ opcode, register.0 ]);
+                    self.write_address(address);
                 },
             }
         }
@@ -149,9 +117,8 @@ impl Compiler {
     fn compile(source: &str) -> Result<Vec<u8>, grammar::ParseError> {
         let mut compiler = Compiler::new();
 
-        for (line_number, line_str) in source.split("\n").enumerate() {
-            let line = try! { line(&line_str) };
-            compiler.process(line_number, line);
+        for line in program(&source)? {
+            compiler.process(line);
         }
 
         compiler.resolve_labels();
@@ -181,12 +148,13 @@ mod tests {
     fn it_resolves_labels() {
         let binary = Compiler::compile("
             nop
+            nop
             foo:
                 nop
                 jmp foo
         ");
 
-        assert_eq!(binary, Ok(vec![ 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x02 ]));
+        assert_eq!(binary, Ok(vec![ 0x00, 0x00, 0x00, 0x20, 0x00, 0x02 ]));
     }
 }
 
