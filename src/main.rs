@@ -5,6 +5,7 @@ extern crate clap;
 use clap::{App,Arg};
 
 use std::collections::HashMap;
+use std::io;
 use std::io::prelude::*;
 use std::fs::File;
 
@@ -158,6 +159,12 @@ mod tests {
     }
 }
 
+fn read_to_string<F: Read>(mut file: F) -> String {
+    let mut buffer = String::new();
+    file.read_to_string(&mut buffer).expect("Unable to read the file");
+    buffer
+}
+
 fn main() {
     let matches = App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
@@ -176,9 +183,12 @@ fn main() {
         .get_matches();
 
     let filename = matches.value_of("file").expect("File name was not provided");
-    let mut file = File::open(filename).expect("Unable to open the file");
-    let mut source = String::new();
-    file.read_to_string(&mut source).expect("Unable to read the file");
+
+    let source = if filename == "-" {
+        read_to_string(io::stdin())
+    } else {
+        read_to_string(File::open(filename).expect("Unable to open the file"))
+    };
 
     match Compiler::compile(&source) {
         Ok(binary) => {
