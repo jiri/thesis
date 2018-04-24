@@ -162,7 +162,7 @@
             = nullary<"ret">
 
         reti -> Instruction
-            = unaryAddr<"reti">
+            = nullary<"reti">
 
         brc -> Instruction
             = unaryAddr<"brc">
