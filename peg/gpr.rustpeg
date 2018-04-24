@@ -177,7 +177,7 @@
             = unaryAddr<"brnz">
 
         control -> Instruction
-            = jmp / call / ret / reti / brc / brnc / brz / brnz
+            = jmp / call / reti / ret / brc / brnc / brz / brnz
 
     // }}}
 
