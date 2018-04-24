@@ -103,7 +103,7 @@ address -> Address
             = unaryReg<"push">
 
         pop -> Instruction
-            = unaryReg<"push">
+            = unaryReg<"pop">
 
         lpm -> Instruction
             = binaryRegAddr<"lpm">
@@ -159,7 +159,7 @@ address -> Address
             = unaryAddr<"call">
 
         ret -> Instruction
-            = unaryAddr<"ret">
+            = nullary<"ret">
 
         reti -> Instruction
             = unaryAddr<"reti">
