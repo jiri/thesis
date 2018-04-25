@@ -207,8 +207,14 @@
         lpm -> Instruction
             = binaryRegAddr<"lpm">
 
+        in -> Instruction
+            = binaryRegIm<"in">
+
+        out -> Instruction
+            = binaryRegIm<"out">
+
         loadstore -> Instruction
-            = mov / ldi / ld / st / ldd / std / push / pop / lpm
+            = mov / ldi / ld / st / ldd / std / push / pop / lpm / in / out
 
     // }}}
 

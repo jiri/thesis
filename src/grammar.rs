@@ -85,6 +85,8 @@ lazy_static! {
         map.insert("lpm",   0x36);
         map.insert("ldd",   0x37);
         map.insert("std",   0x38);
+        map.insert("in",    0x39);
+        map.insert("out",   0x3A);
 
         map
     };
