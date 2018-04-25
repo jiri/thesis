@@ -47,15 +47,13 @@ lazy_static! {
     static ref OPCODES: HashMap<&'static str, Opcode> = {
         let mut map = HashMap::new();
 
-        map.insert("mov",   0x30);
-        map.insert("ldi",   0x31);
-        map.insert("ld",    0x32);
-        map.insert("st",    0x33);
-        map.insert("push",  0x34);
-        map.insert("pop",   0x35);
-        map.insert("lpm",   0x36);
-        map.insert("ldd",   0x37);
-        map.insert("std",   0x38);
+        /* Utility */
+        map.insert("nop",   0x00);
+        map.insert("stop",  0x01);
+        map.insert("sleep", 0x02);
+        map.insert("break", 0x03);
+
+        /* Arithmetic */
         map.insert("add",   0x10);
         map.insert("addc",  0x11);
         map.insert("sub",   0x12);
@@ -66,6 +64,8 @@ lazy_static! {
         map.insert("or",    0x17);
         map.insert("xor",   0x18);
         map.insert("cmp",   0x19);
+
+        /* Flow control */
         map.insert("jmp",   0x20);
         map.insert("call",  0x21);
         map.insert("ret",   0x22);
@@ -74,10 +74,17 @@ lazy_static! {
         map.insert("brnc",  0x25);
         map.insert("brz",   0x26);
         map.insert("brnz",  0x27);
-        map.insert("nop",   0x00);
-        map.insert("stop",  0x01);
-        map.insert("sleep", 0x02);
-        map.insert("break", 0x03);
+
+        /* Load / store */
+        map.insert("mov",   0x30);
+        map.insert("ldi",   0x31);
+        map.insert("ld",    0x32);
+        map.insert("st",    0x33);
+        map.insert("push",  0x34);
+        map.insert("pop",   0x35);
+        map.insert("lpm",   0x36);
+        map.insert("ldd",   0x37);
+        map.insert("std",   0x38);
 
         map
     };

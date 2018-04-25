@@ -91,37 +91,22 @@
 
     // }}}
 
-    // Load / Store {{{
+    // Utility {{{
 
-        mov -> Instruction
-            = binaryRegReg<"mov">
+        nop -> Instruction
+            = nullary<"nop">
 
-        ldi -> Instruction
-            = binaryRegIm<"ldi">
+        stop -> Instruction
+            = nullary<"stop">
 
-        ld -> Instruction
-            = binaryRegAddr<"ld">
+        sleep -> Instruction
+            = nullary<"sleep">
 
-        st -> Instruction
-            = binaryRegAddr<"st">
+        break -> Instruction
+            = nullary<"break">
 
-        ldd -> Instruction
-            = binaryRegDeref<"ldd">
-
-        std -> Instruction
-            = binaryRegDeref<"std">
-
-        push -> Instruction
-            = unaryReg<"push">
-
-        pop -> Instruction
-            = unaryReg<"pop">
-
-        lpm -> Instruction
-            = binaryRegAddr<"lpm">
-
-        loadstore -> Instruction
-            = mov / ldi / ld / st / ldd / std / push / pop / lpm
+        utility -> Instruction
+            = nop / stop / sleep / break
 
     // }}}
 
@@ -193,22 +178,37 @@
 
     // }}}
 
-    // Utility {{{
+    // Load / Store {{{
 
-        nop -> Instruction
-            = nullary<"nop">
+        mov -> Instruction
+            = binaryRegReg<"mov">
 
-        stop -> Instruction
-            = nullary<"stop">
+        ldi -> Instruction
+            = binaryRegIm<"ldi">
 
-        sleep -> Instruction
-            = nullary<"sleep">
+        ld -> Instruction
+            = binaryRegAddr<"ld">
 
-        break -> Instruction
-            = nullary<"break">
+        st -> Instruction
+            = binaryRegAddr<"st">
 
-        utility -> Instruction
-            = nop / stop / sleep / break
+        ldd -> Instruction
+            = binaryRegDeref<"ldd">
+
+        std -> Instruction
+            = binaryRegDeref<"std">
+
+        push -> Instruction
+            = unaryReg<"push">
+
+        pop -> Instruction
+            = unaryReg<"pop">
+
+        lpm -> Instruction
+            = binaryRegAddr<"lpm">
+
+        loadstore -> Instruction
+            = mov / ldi / ld / st / ldd / std / push / pop / lpm
 
     // }}}
 
