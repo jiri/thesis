@@ -34,6 +34,7 @@ pub enum Instruction {
     BinaryRegIm(Opcode, Register, u8),
     BinaryRegReg(Opcode, Register, Register),
     BinaryRegAddr(Opcode, Register, Address),
+    BinaryRegDeref(Opcode, Register, (Register, Register)),
 }
 
 #[derive(Debug)]
@@ -53,6 +54,8 @@ lazy_static! {
         map.insert("push",  0x34);
         map.insert("pop",   0x35);
         map.insert("lpm",   0x36);
+        map.insert("ldd",   0x37);
+        map.insert("std",   0x38);
         map.insert("add",   0x10);
         map.insert("addc",  0x11);
         map.insert("sub",   0x12);

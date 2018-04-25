@@ -43,6 +43,9 @@
     address -> Address
         = l:label { Address::Label(l) } / u:u16 { Address::Immediate(u) }
 
+    deref -> (Register, Register)
+        = "[" h:register ":" l:register "]" { (h, l) }
+
 // }}}
 
 // Instructions {{{
@@ -66,6 +69,9 @@
 
         binaryRegAddr<M>
             = m:$(M) ws+ r:register comma a:address { Instruction::BinaryRegAddr(*OPCODES.get(m).unwrap(), r, a) }
+
+        binaryRegDeref<M>
+            = m:$(M) ws+ r:register comma d:deref { Instruction::BinaryRegDeref(*OPCODES.get(m).unwrap(), r, d) }
 
     // }}}
 
@@ -99,6 +105,12 @@
         st -> Instruction
             = binaryRegAddr<"st">
 
+        ldd -> Instruction
+            = binaryRegDeref<"ldd">
+
+        std -> Instruction
+            = binaryRegDeref<"std">
+
         push -> Instruction
             = unaryReg<"push">
 
@@ -109,7 +121,7 @@
             = binaryRegAddr<"lpm">
 
         loadstore -> Instruction
-            = mov / ldi / ld / st / push / pop / lpm
+            = mov / ldi / ld / st / ldd / std / push / pop / lpm
 
     // }}}
 

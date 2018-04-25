@@ -100,6 +100,10 @@ impl Compiler {
                     self.write(&[ opcode, register.0 ]);
                     self.write_address(address);
                 },
+                BinaryRegDeref(opcode, register, (high, low)) => {
+                    self.write(&[ opcode, register.0 ]);
+                    self.write_registers(high, low);
+                },
             }
         }
     }
