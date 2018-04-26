@@ -1,3 +1,5 @@
+use std::char;
+
 // Helpers {{{
 
     alpha = [a-zA-Z]
@@ -46,8 +48,27 @@
     deref -> (Register, Register)
         = "[" h:register ":" l:register "]" { (h, l) }
 
-    str -> String
-        = "\"" s:$([^\n\"]*) "\"" { String::from(s) }
+    string -> String
+        = '"' s:asciiChar* '"' { s.into_iter().collect() }
+
+    asciiChar -> char
+        = quotedChar / escapeSequence / hexEscapeSequence
+
+    quotedChar -> char
+        = !('"' / "\\") c:$. { c.chars().next().unwrap() }
+
+    escapeSequence -> char
+        = "\\" !(digit / "x" / "u") c:$(.) {
+            match c.chars().next().unwrap() {
+                'n' => '\n',
+                'r' => '\r',
+                't' => '\t',
+                 x  => x,
+            }
+        }
+
+    hexEscapeSequence -> char
+        = "\\x" value:$(hexdigit hexdigit) { char::from_u32(u32::from_str_radix(value, 16).unwrap()).unwrap() }
 
 // }}}
 
@@ -84,7 +105,7 @@
             = ".db" ws+ bs:u8 ** comma { Instruction::Db(bs) }
 
         dstr -> Instruction
-            = ".dstr" ws+ s:str { Instruction::Dstr(s) }
+            = ".dstr" ws+ s:string { Instruction::Dstr(s) }
 
         ds -> Instruction
             = ".ds" ws+ len:u16 { Instruction::Ds(len) }
