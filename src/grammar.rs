@@ -24,9 +24,14 @@ pub enum Address {
 type Opcode = u8;
 
 #[derive(Debug)]
+pub enum Serializable {
+    Byte(u8),
+    String(String),
+}
+
+#[derive(Debug)]
 pub enum Instruction {
-    Db(Vec<u8>),
-    Dstr(String),
+    Db(Vec<Serializable>),
     Ds(u16),
     Org(u16),
     Nullary(Opcode),

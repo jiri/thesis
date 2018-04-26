@@ -101,11 +101,11 @@ use std::char;
 
     // Special {{{
 
-        db -> Instruction
-            = ".db" ws+ bs:u8 ** comma { Instruction::Db(bs) }
+        serializable -> Serializable
+            = b:u8 { Serializable::Byte(b) } / s:string { Serializable::String(s) }
 
-        dstr -> Instruction
-            = ".dstr" ws+ s:string { Instruction::Dstr(s) }
+        db -> Instruction
+            = ".db" ws+ vs:serializable ** comma { Instruction::Db(vs) }
 
         ds -> Instruction
             = ".ds" ws+ len:u16 { Instruction::Ds(len) }
@@ -114,7 +114,7 @@ use std::char;
             = ".org" ws+ addr:u16 { Instruction::Org(addr) }
 
         special -> Instruction
-            = ds / dstr / db / org
+            = db / ds / org
 
     // }}}
 

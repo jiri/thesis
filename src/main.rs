@@ -66,11 +66,18 @@ impl Compiler {
 
             /* Write the binary output */
             match instruction {
-                Db(bs) => {
-                    self.write(&bs);
-                },
-                Dstr(s) => {
-                    self.write(s.as_bytes());
+                Db(vs) => {
+                    for v in vs {
+                        match v {
+                            Serializable::Byte(b) => {
+                                self.write(&[ b ]);
+                            },
+                            Serializable::String(s) => {
+                                self.write(s.as_bytes());
+                                self.write(&[ 0x00 ]);
+                            },
+                        }
+                    }
                 },
                 Ds(len) => {
                     self.cursor += len;
@@ -159,6 +166,15 @@ mod tests {
         ");
 
         assert_eq!(binary, Ok(vec![ 0x00, 0x00, 0x00, 0x20, 0x00, 0x02 ]));
+    }
+
+    #[test]
+    fn string_literals_are_zero_terminated() {
+        let binary = Compiler::compile("
+            .db 0xAA, \"a\", 0xBB
+        ");
+
+        assert_eq!(binary, Ok(vec![ 0xAA, 0x61, 0x00, 0xBB ]));
     }
 }
 
