@@ -68,10 +68,6 @@ impl Compiler {
             match instruction {
                 Db(bs) => {
                     self.write(&bs);
-                    // Align to word
-                    if bs.len() % 2 == 1 {
-                        self.write(&[ 0 ]);
-                    }
                 },
                 Dstr(s) => {
                     self.write(s.as_bytes());
