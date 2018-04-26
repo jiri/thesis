@@ -111,8 +111,14 @@
         break -> Instruction
             = nullary<"break">
 
+        ei -> Instruction
+            = nullary<"ei">
+
+        di -> Instruction
+            = nullary<"di">
+
         utility -> Instruction
-            = nop / stop / sleep / break
+            = nop / stop / sleep / break / ei / di
 
     // }}}
 

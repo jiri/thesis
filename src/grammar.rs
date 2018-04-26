@@ -53,6 +53,8 @@ lazy_static! {
         map.insert("stop",  0x01);
         map.insert("sleep", 0x02);
         map.insert("break", 0x03);
+        map.insert("ei",    0x04);
+        map.insert("di",    0x05);
 
         /* Arithmetic */
         map.insert("add",   0x10);
