@@ -47,7 +47,7 @@
         = "[" h:register ":" l:register "]" { (h, l) }
 
     str -> String
-        = "\"" s:$([^\n\"]) "\"" { String::from(s) }
+        = "\"" s:$([^\n\"]*) "\"" { String::from(s) }
 
 // }}}
 
@@ -93,7 +93,7 @@
             = ".org" ws+ addr:u16 { Instruction::Org(addr) }
 
         special -> Instruction
-            = ds / db / org
+            = ds / dstr / db / org
 
     // }}}
 
