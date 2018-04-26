@@ -73,6 +73,9 @@ impl Compiler {
                         self.write(&[ 0 ]);
                     }
                 },
+                Dstr(s) => {
+                    self.write(s.as_bytes());
+                },
                 Ds(len) => {
                     self.cursor += len;
                 },

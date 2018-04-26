@@ -46,6 +46,9 @@
     deref -> (Register, Register)
         = "[" h:register ":" l:register "]" { (h, l) }
 
+    str -> String
+        = "\"" s:$([^\n\"]) "\"" { String::from(s) }
+
 // }}}
 
 // Instructions {{{
@@ -79,6 +82,9 @@
 
         db -> Instruction
             = ".db" ws+ bs:u8 ** comma { Instruction::Db(bs) }
+
+        dstr -> Instruction
+            = ".dstr" ws+ s:str { Instruction::Dstr(s) }
 
         ds -> Instruction
             = ".ds" ws+ len:u16 { Instruction::Ds(len) }

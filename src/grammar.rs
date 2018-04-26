@@ -26,6 +26,7 @@ type Opcode = u8;
 #[derive(Debug)]
 pub enum Instruction {
     Db(Vec<u8>),
+    Dstr(String),
     Ds(u16),
     Org(u16),
     Nullary(Opcode),
