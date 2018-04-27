@@ -17,6 +17,7 @@ struct Compiler {
     output: [u8; 0x10000],
     label_map: HashMap<Label, u16>,
     needs_label: Vec<(u16, Label)>,
+    last_major_label: Label,
 }
 
 impl Compiler {
@@ -26,6 +27,7 @@ impl Compiler {
             output: [0; 0x10000],
             label_map: HashMap::new(),
             needs_label: Vec::new(),
+            last_major_label: String::new(),
         }
     }
 
@@ -43,7 +45,11 @@ impl Compiler {
     fn write_address(&mut self, addr: Address) {
         match addr {
             Address::Label(label) => {
-                self.needs_label.push((self.cursor, label));
+                if label.starts_with(".") {
+                    self.needs_label.push((self.cursor, self.last_major_label.clone() + &label));
+                } else {
+                    self.needs_label.push((self.cursor, label));
+                }
                 self.write_word(0x0000);
             },
             Address::Immediate(i) => {
@@ -58,7 +64,15 @@ impl Compiler {
 
     fn process(&mut self, line: Line) {
         if let Some(label) = line.label {
-            self.label_map.insert(label.clone(), self.cursor);
+            if label.chars().next().unwrap().is_uppercase() {
+                self.last_major_label = label.clone();
+            }
+
+            if label.starts_with(".") {
+                self.label_map.insert(self.last_major_label.clone() + &label, self.cursor);
+            } else {
+                self.label_map.insert(label.clone(), self.cursor);
+            }
         }
 
         if let Some(instruction) = line.instruction {
@@ -168,7 +182,22 @@ mod tests {
     }
 
     #[test]
-    fn string_literals_are_zero_terminated() {
+    fn it_resolves_local_labels() {
+        let binary = Compiler::compile("
+            First:
+            .loop:
+                jmp .loop
+
+            Second:
+            .loop:
+                jmp .loop
+        ");
+
+        assert_eq!(binary, Ok(vec![ 0x20, 0x00, 0x00, 0x20, 0x00, 0x03 ]));
+    }
+
+    #[test]
+    fn string_literals_are_not_zero_terminated() {
         let binary = Compiler::compile("
             .db 0xAA, \"a\", 0xBB
         ");

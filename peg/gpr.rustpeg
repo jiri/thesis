@@ -40,7 +40,7 @@ use std::char;
         = "R" v:$(digit*<1,2>) {? Register::new(v.parse::<u8>().unwrap()) }
 
     label -> Label
-        = i:$(identifier) { Label::from(i) }
+        = i:$("."? identifier) { Label::from(i) }
 
     address -> Address
         = l:label { Address::Label(l) } / u:u16 { Address::Immediate(u) }
