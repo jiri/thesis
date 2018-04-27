@@ -74,7 +74,6 @@ impl Compiler {
                             },
                             Serializable::String(s) => {
                                 self.write(s.as_bytes());
-                                self.write(&[ 0x00 ]);
                             },
                         }
                     }
@@ -174,7 +173,7 @@ mod tests {
             .db 0xAA, \"a\", 0xBB
         ");
 
-        assert_eq!(binary, Ok(vec![ 0xAA, 0x61, 0x00, 0xBB ]));
+        assert_eq!(binary, Ok(vec![ 0xAA, 0x61, 0xBB ]));
     }
 }
 
