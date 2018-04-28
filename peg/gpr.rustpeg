@@ -175,8 +175,11 @@ use std::char;
         cmp -> Instruction
             = binaryRegReg<"cmp">
 
+        cmpi -> Instruction
+            = binaryRegIm<"cmpi">
+
         arithmetic -> Instruction
-            = add / addc / sub / subc / inc / dec / and / or / xor / cmp
+            = add / addc / sub / subc / inc / dec / and / or / xor / cmp / cmpi
 
     // }}}
 

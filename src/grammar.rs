@@ -72,6 +72,7 @@ lazy_static! {
         map.insert("or",    0x17);
         map.insert("xor",   0x18);
         map.insert("cmp",   0x19);
+        map.insert("cmpi",  0x1A);
 
         /* Flow control */
         map.insert("jmp",   0x20);
