@@ -37,7 +37,7 @@ use std::char;
         = u8_hex / u8_dec
 
     register -> Register
-        = "R" v:$(digit*<1,2>) {? Register::new(v.parse::<u8>().unwrap()) }
+        = "R"i v:$(digit*<1,2>) {? Register::new(v.parse::<u8>().unwrap()) }
 
     label -> Label
         = i:$("."? identifier) { Label::from(i) }
