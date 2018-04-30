@@ -2,6 +2,9 @@
 extern crate lazy_static;
 extern crate clap;
 
+extern crate serde;
+extern crate serde_json;
+
 use clap::{App,Arg};
 
 use std::collections::HashMap;
@@ -138,7 +141,7 @@ impl Compiler {
         }
     }
 
-    fn compile(source: &str) -> Result<Vec<u8>, grammar::ParseError> {
+    fn compile(source: &str) -> Result<(Vec<u8>, String), grammar::ParseError> {
         let mut compiler = Compiler::new();
 
         for line in program(&source)? {
@@ -153,7 +156,7 @@ impl Compiler {
             output.pop();
         }
 
-        Ok(output)
+        Ok((output, serde_json::to_string(&compiler.label_map).unwrap()))
     }
 }
 
@@ -227,6 +230,13 @@ fn main() {
             .help("Path to the output file")
             .required(false)
             .takes_value(true))
+        .arg(Arg::with_name("symfile")
+            .value_name("SYMFILE")
+            .short("s")
+            .long("symfile")
+            .help("If set, path to the symfile output")
+            .required(false)
+            .takes_value(true))
         .arg(Arg::with_name("stdout")
             .long("stdout")
             .help("Output the resulting binary to stdout"))
@@ -241,8 +251,8 @@ fn main() {
     };
 
     match Compiler::compile(&source) {
-        Ok(binary) => {
-            let res = if matches.is_present("stdout") {
+        Ok((binary, symbols)) => {
+            let binary_res = if matches.is_present("stdout") {
                 io::stdout().write_all(&binary)
             } else {
                 let outfile = matches.value_of("output").unwrap_or("out.bin");
@@ -250,7 +260,12 @@ fn main() {
                 file.write_all(&binary)
             };
 
-            res.expect("Failed to write file");
+            binary_res.expect("Failed to write file");
+
+            if let Some(symfilepath) = matches.value_of("symfile") {
+                let mut file = File::create(symfilepath).expect("Failed to create symfile");
+                file.write_all(symbols.as_bytes()).expect("Failed to write symfile");
+            }
         },
         Err(err) => {
             println!("Error on {}:{}:{}, expected one of {:?}", filename, err.line, err.column, err.expected);

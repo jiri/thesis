@@ -8,5 +8,8 @@ build = "build.rs"
 clap = "*"
 lazy_static = "1.0.0"
 
+serde = "*"
+serde_json = "*"
+
 [build-dependencies]
 peg = { git = "https://github.com/kevinmehall/rust-peg/", features = ["formatted_output"] }
