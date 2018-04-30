@@ -76,12 +76,8 @@ impl Compiler {
                 Db(vs) => {
                     for v in vs {
                         match v {
-                            Serializable::Byte(b) => {
-                                self.write(&[ b ]);
-                            },
-                            Serializable::String(s) => {
-                                self.write(s.as_bytes());
-                            },
+                            Serializable::Byte(b)   => self.write(&[ b ]),
+                            Serializable::String(s) => self.write(s.as_bytes()),
                         }
                     }
                 },
@@ -125,9 +121,9 @@ impl Compiler {
             if let Some(addr) = self.label_map.get(label) {
                 self.output[*position as usize .. *position as usize + 2].clone_from_slice(&vec![ ((addr & 0xff00) >> 8) as u8, (addr & 0x00ff >> 0) as u8 ]);
             }
-                else {
-                    println!("Warning: Undefined label '{}'!", label);
-                }
+            else {
+                println!("Warning: Undefined label '{}'!", label);
+            }
         }
     }
 

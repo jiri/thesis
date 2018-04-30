@@ -21,7 +21,7 @@ pub enum Address {
     Immediate(u16),
 }
 
-type Opcode = u8;
+pub type Opcode = u8;
 
 #[derive(Debug)]
 pub enum Serializable {
