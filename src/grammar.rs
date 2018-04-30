@@ -43,6 +43,23 @@ pub enum Instruction {
     BinaryRegDeref(Opcode, Register, (Register, Register)),
 }
 
+impl Instruction {
+    pub fn opcode(&self) -> Option<Opcode> {
+        use self::Instruction::*;
+
+        match self {
+            Db(_) | Ds(_) | Org(_) => None,
+            Nullary(op)
+            | UnaryReg(op, _)
+            | UnaryAddr(op, _)
+            | BinaryRegIm(op, _, _)
+            | BinaryRegReg(op, _, _)
+            | BinaryRegAddr(op, _, _)
+            | BinaryRegDeref(op, _, _) => Some(*op),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Line {
     pub label: Option<Label>,
