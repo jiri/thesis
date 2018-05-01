@@ -67,7 +67,7 @@ pub struct Line {
 }
 
 lazy_static! {
-    static ref OPCODES: HashMap<&'static str, Opcode> = {
+    pub static ref OPCODES: HashMap<&'static str, Opcode> = {
         let mut map = HashMap::new();
 
         /* Utility */

@@ -38,10 +38,17 @@ fn main() {
             .required(false)
             .takes_value(true))
         .arg(Arg::with_name("symfile")
-            .value_name("SYMFILE")
+            .value_name("FILE")
             .short("s")
             .long("symfile")
-            .help("If set, path to the symfile output")
+            .help("If set, path where the symfile will be outputted")
+            .required(false)
+            .takes_value(true))
+        .arg(Arg::with_name("whitelist")
+            .value_name("FILE")
+            .short("w")
+            .long("whitelist")
+            .help("If set, path to a file containing instruction whitelist")
             .required(false)
             .takes_value(true))
         .arg(Arg::with_name("stdout")
@@ -57,7 +64,15 @@ fn main() {
         read_to_string(File::open(filename).expect("Unable to open the file"))
     };
 
-    match Compiler::compile(&source) {
+    let whitelist: Option<Vec<String>> = if let Some(whitelist_file) = matches.value_of("whitelist") {
+        let file = File::open(whitelist_file).expect("Unable to open the whitelist");
+        let contents = read_to_string(file);
+        serde_json::from_str(contents.as_str()).ok()
+    } else {
+        None
+    };
+
+    match Compiler::compile(&source, whitelist) {
         Ok((binary, symbols)) => {
             let binary_res = if matches.is_present("stdout") {
                 io::stdout().write_all(&binary)
@@ -75,7 +90,7 @@ fn main() {
             }
         },
         Err(err) => {
-            println!("Error on {}:{}:{}, expected one of {:?}", filename, err.line, err.column, err.expected);
+            println!("Error: {}", err);
         }
     }
 }

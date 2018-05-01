@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use serde_json;
 
-use grammar;
 use grammar::*;
 
 pub struct Compiler {
@@ -11,6 +10,7 @@ pub struct Compiler {
     label_map: HashMap<Label, u16>,
     needs_label: Vec<(u16, Label)>,
     last_major_label: Label,
+    enabled_instructions: Option<HashMap<Opcode, String>>,
 }
 
 impl Compiler {
@@ -21,6 +21,7 @@ impl Compiler {
             label_map: HashMap::new(),
             needs_label: Vec::new(),
             last_major_label: String::new(),
+            enabled_instructions: None,
         }
     }
 
@@ -55,7 +56,7 @@ impl Compiler {
         self.write(&[ r0.0 << 4 | r1.0 ]);
     }
 
-    fn process(&mut self, line: Line) {
+    fn process(&mut self, line: Line) -> Result<(), String> {
         if let Some(label) = line.label {
             if label.chars().next().unwrap().is_uppercase() {
                 self.last_major_label = label.clone();
@@ -70,6 +71,19 @@ impl Compiler {
 
         if let Some(instruction) = line.instruction {
             use grammar::Instruction::*;
+
+            if let Some(opcode) = instruction.opcode() {
+                if let Some(ref whitelist) = self.enabled_instructions {
+                    if !whitelist.contains_key(&opcode) {
+                        for (mnem, op) in OPCODES.iter() {
+                            if *op == opcode {
+                                return Err(format!("Use of instruction '{}' not allowed with current whitelist", mnem));
+                            }
+                        }
+                        panic!("Opcode set changed between parsing and processing.");
+                    }
+                }
+            }
 
             /* Write the binary output */
             match instruction {
@@ -114,27 +128,40 @@ impl Compiler {
                 },
             }
         }
+
+        Ok(())
     }
 
-    fn resolve_labels(&mut self) {
-        for (position, label) in self.needs_label.iter() {
-            if let Some(addr) = self.label_map.get(label) {
-                self.output[*position as usize .. *position as usize + 2].clone_from_slice(&vec![ ((addr & 0xff00) >> 8) as u8, (addr & 0x00ff >> 0) as u8 ]);
-            }
-            else {
-                println!("Warning: Undefined label '{}'!", label);
-            }
-        }
-    }
-
-    pub fn compile(source: &str) -> grammar::ParseResult<(Vec<u8>, String)> {
+    pub fn compile(source: &str, whitelist: Option<Vec<String>>) -> Result<(Vec<u8>, String), String> {
         let mut compiler = Compiler::new();
 
-        for line in program(&source)? {
-            compiler.process(line);
+        if let Some(mnemonics) = whitelist {
+            let mut map = HashMap::new();
+
+            for mnemonic in mnemonics {
+                if let Some(opcode) = OPCODES.get(mnemonic.as_str()) {
+                    map.insert(*opcode, mnemonic);
+                }
+                else {
+                    return Err(format!("Unknown whitelist instruction '{}'", mnemonic));
+                }
+            }
+
+            compiler.enabled_instructions = Some(map);
         }
 
-        compiler.resolve_labels();
+        match program(&source) {
+            Ok(lines) => {
+                for line in lines {
+                    compiler.process(line)?;
+                }
+            },
+            Err(err) => {
+                return Err(format!("On {}:{}, expected one of {:?}", err.line, err.column, err.expected));
+            },
+        }
+
+        compiler.resolve_labels()?;
 
         /* Strip trailing zeroes */
         let mut output = compiler.output.to_vec();
@@ -144,6 +171,19 @@ impl Compiler {
 
         Ok((output, serde_json::to_string(&compiler.label_map).unwrap()))
     }
+
+    fn resolve_labels(&mut self) -> Result<(), String> {
+        for (position, label) in self.needs_label.iter() {
+            if let Some(addr) = self.label_map.get(label) {
+                self.output[*position as usize .. *position as usize + 2].clone_from_slice(&vec![ ((addr & 0xff00) >> 8) as u8, (addr & 0x00ff >> 0) as u8 ]);
+            }
+            else {
+                return Err(format!("Warning: Undefined label '{}'!", label));
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -152,7 +192,7 @@ mod tests {
 
     #[test]
     fn it_produces_output() {
-        let binary = Compiler::compile("add R0, R1").expect("Failed to compile code");
+        let binary = Compiler::compile("add R0, R1", None).expect("Failed to compile code");
 
         assert_eq!(binary.0, vec![ 0x10, 0x01 ]);
     }
@@ -165,7 +205,7 @@ mod tests {
             foo:
                 nop
                 jmp foo
-        ").expect("Failed to compile code");
+        ", None).expect("Failed to compile code");
 
         assert_eq!(binary.0, vec![ 0x00, 0x00, 0x00, 0x20, 0x00, 0x02 ]);
     }
@@ -180,7 +220,7 @@ mod tests {
             Second:
             .loop:
                 jmp .loop
-        ").expect("Failed to compile code");
+        ", None).expect("Failed to compile code");
 
         assert_eq!(binary.0, vec![ 0x20, 0x00, 0x00, 0x20, 0x00, 0x03 ]);
     }
@@ -189,7 +229,7 @@ mod tests {
     fn string_literals_are_not_zero_terminated() {
         let binary = Compiler::compile("
             .db 0xAA, \"a\", 0xBB
-        ").expect("Failed to compile code");
+        ", None).expect("Failed to compile code");
 
         assert_eq!(binary.0, vec![ 0xAA, 0x61, 0xBB ]);
     }
@@ -203,12 +243,22 @@ mod tests {
             B:
             .org 0x40
             C:
-        ").expect("Failed to compile code");
+        ", None).expect("Failed to compile code");
 
         let syms: HashMap<String, u16> = serde_json::from_str(&binary.1).expect("Failed to read symfile as json");
 
         assert_eq!(syms["A"], 0x0);
         assert_eq!(syms["B"], 0x100);
         assert_eq!(syms["C"], 0x40);
+    }
+
+    #[test]
+    fn it_respects_whitelist() {
+        let binary = Compiler::compile("
+            add R0, R1
+            sub R0, R1
+        ", Some(vec![ "add".to_owned() ]));
+
+        assert!(binary.is_err());
     }
 }
