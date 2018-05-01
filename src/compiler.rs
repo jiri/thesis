@@ -14,7 +14,7 @@ pub struct Compiler {
 }
 
 impl Compiler {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             cursor: 0,
             output: [0; 0x10000],
