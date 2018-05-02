@@ -8,7 +8,7 @@ pub struct Compiler {
     cursor: u16,
     output: [u8; 0x10000],
     label_map: HashMap<Label, u16>,
-    needs_label: Vec<(u16, Label)>,
+    needs_label: Vec<(u16, Label, Nibble)>,
     last_major_label: Label,
     enabled_instructions: Option<HashMap<Opcode, String>>,
 }
@@ -40,9 +40,9 @@ impl Compiler {
         match addr {
             Address::Label(label) => {
                 if label.starts_with(".") {
-                    self.needs_label.push((self.cursor, self.last_major_label.clone() + &label));
+                    self.needs_label.push((self.cursor, self.last_major_label.clone() + &label, Nibble::Both));
                 } else {
-                    self.needs_label.push((self.cursor, label));
+                    self.needs_label.push((self.cursor, label, Nibble::Both));
                 }
                 self.write_word(0x0000);
             },
@@ -52,8 +52,48 @@ impl Compiler {
         }
     }
 
+    fn write_value(&mut self, value: Value) {
+        match value {
+            Value::Immediate(v) => {
+                self.write(&[ v ]);
+            },
+            Value::Addr(addr, nib) => {
+                match addr {
+                    Address::Label(label) => {
+                        if label.starts_with(".") {
+                            self.needs_label.push((self.cursor, self.last_major_label.clone() + &label, nib));
+                        } else {
+                            self.needs_label.push((self.cursor, label, nib));
+                        }
+                        self.write(&[ 0x00 ]);
+                    },
+                    Address::Immediate(i) => {
+                        match nib {
+                            Nibble::Both => unreachable!(),
+                            Nibble::High => {
+                                let hi_byte = ((i & 0xFF00) >> 8) as u8;
+                                self.write(&[ hi_byte ]);
+                            },
+                            Nibble::Low => {
+                                let lo_byte = ((i & 0x00FF) >> 0) as u8;
+                                self.write(&[ lo_byte ]);
+                            },
+                        }
+                    }
+                }
+            },
+        }
+    }
+
     fn write_registers(&mut self, r0: Register, r1: Register) {
         self.write(&[ r0.0 << 4 | r1.0 ]);
+    }
+
+    fn write_serializable(&mut self, value: Serializable) {
+        match value {
+            Serializable::Byte(b)   => self.write(&[ b ]),
+            Serializable::String(s) => self.write(s.as_bytes()),
+        }
     }
 
     fn process(&mut self, line: Line) -> Result<(), String> {
@@ -89,10 +129,7 @@ impl Compiler {
             match instruction {
                 Db(vs) => {
                     for v in vs {
-                        match v {
-                            Serializable::Byte(b)   => self.write(&[ b ]),
-                            Serializable::String(s) => self.write(s.as_bytes()),
-                        }
+                        self.write_serializable(v);
                     }
                 },
                 Ds(len) => {
@@ -112,7 +149,8 @@ impl Compiler {
                     self.write_address(address);
                 },
                 BinaryRegIm(opcode, register, value) => {
-                    self.write(&[ opcode, register.0, value ]);
+                    self.write(&[ opcode, register.0 ]);
+                    self.write_value(value);
                 },
                 BinaryRegReg(opcode, register0, register1) => {
                     self.write(&[ opcode ]);
@@ -173,12 +211,20 @@ impl Compiler {
     }
 
     fn resolve_labels(&mut self) -> Result<(), String> {
-        for (position, label) in self.needs_label.iter() {
-            if let Some(addr) = self.label_map.get(label) {
-                self.output[*position as usize .. *position as usize + 2].clone_from_slice(&vec![ ((addr & 0xff00) >> 8) as u8, (addr & 0x00ff >> 0) as u8 ]);
-            }
-            else {
-                return Err(format!("Warning: Undefined label '{}'!", label));
+        for (position, label, nib) in self.needs_label.iter() {
+            let addr = self.label_map.get(label).ok_or(format!("Undefined label '{}'!", label))?;
+
+            match nib {
+                Nibble::Both => {
+                    self.output[*position as usize + 0] = ((addr & 0xff00) >> 8) as u8;
+                    self.output[*position as usize + 1] = ((addr & 0x00ff) >> 0) as u8;
+                },
+                Nibble::High => {
+                    self.output[*position as usize] = ((addr & 0xff00) >> 8) as u8;
+                },
+                Nibble::Low => {
+                    self.output[*position as usize] = ((addr & 0x00ff) >> 0) as u8;
+                },
             }
         }
 
@@ -260,5 +306,18 @@ mod tests {
         ", Some(vec![ "add".to_owned() ]));
 
         assert!(binary.is_err());
+    }
+
+    #[test]
+    fn it_resolves_high_low_addr() {
+        let binary = Compiler::compile("
+            org 0x0
+            ldi R0, hi(addr)
+            ldi R1, lo(addr)
+            org 0xABBA
+            addr:
+        ", None).expect("Failed to compile code");
+
+        assert_eq!(binary.0, vec![ 0x31, 0x00, 0xAB, 0x31, 0x01, 0xBA ]);
     }
 }

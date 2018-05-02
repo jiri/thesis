@@ -30,6 +30,19 @@ pub enum Serializable {
 }
 
 #[derive(Debug)]
+pub enum Nibble {
+    Both,
+    High,
+    Low,
+}
+
+#[derive(Debug)]
+pub enum Value {
+    Immediate(u8),
+    Addr(Address, Nibble),
+}
+
+#[derive(Debug)]
 pub enum Instruction {
     Db(Vec<Serializable>),
     Ds(u16),
@@ -37,7 +50,7 @@ pub enum Instruction {
     Nullary(Opcode),
     UnaryReg(Opcode, Register),
     UnaryAddr(Opcode, Address),
-    BinaryRegIm(Opcode, Register, u8),
+    BinaryRegIm(Opcode, Register, Value),
     BinaryRegReg(Opcode, Register, Register),
     BinaryRegAddr(Opcode, Register, Address),
     BinaryRegDeref(Opcode, Register, (Register, Register)),
