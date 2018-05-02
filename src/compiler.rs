@@ -228,7 +228,7 @@ mod tests {
     #[test]
     fn string_literals_are_not_zero_terminated() {
         let binary = Compiler::compile("
-            .db 0xAA, \"a\", 0xBB
+            db 0xAA, \"a\", 0xBB
         ", None).expect("Failed to compile code");
 
         assert_eq!(binary.0, vec![ 0xAA, 0x61, 0xBB ]);
@@ -237,11 +237,11 @@ mod tests {
     #[test]
     fn it_produces_a_symfile() {
         let binary = Compiler::compile("
-            .org 0x0
+            org 0x0
             A:
-            .org 0x100
+            org 0x100
             B:
-            .org 0x40
+            org 0x40
             C:
         ", None).expect("Failed to compile code");
 

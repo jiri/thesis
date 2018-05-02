@@ -105,13 +105,13 @@ use std::char;
             = b:u8 { Serializable::Byte(b) } / s:string { Serializable::String(s) }
 
         db -> Instruction
-            = ".db" ws+ vs:serializable ** comma { Instruction::Db(vs) }
+            = "db" ws+ vs:serializable ** comma { Instruction::Db(vs) }
 
         ds -> Instruction
-            = ".ds" ws+ len:u16 { Instruction::Ds(len) }
+            = "ds" ws+ len:u16 { Instruction::Ds(len) }
 
         org -> Instruction
-            = ".org" ws+ addr:u16 { Instruction::Org(addr) }
+            = "org" ws+ addr:u16 { Instruction::Org(addr) }
 
         special -> Instruction
             = db / ds / org
