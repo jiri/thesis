@@ -13,6 +13,7 @@ pub struct Compiler {
     needs_label: Vec<(u16, Label, Nibble)>,
     last_major_label: Label,
     enabled_instructions: Option<HashMap<Opcode, String>>,
+    file_stack: Vec<Vec<String>>,
 }
 
 impl Compiler {
@@ -24,6 +25,7 @@ impl Compiler {
             needs_label: Vec::new(),
             last_major_label: String::new(),
             enabled_instructions: None,
+            file_stack: Vec::new(),
         }
     }
 
@@ -199,15 +201,15 @@ impl Compiler {
             compiler.enabled_instructions = Some(map);
         }
 
-        let mut file_stack: Vec<Vec<String>> = vec![ source.split('\n').rev().map(|x| x.to_owned()).collect() ];
+        compiler.file_stack = vec![ source.split('\n').rev().map(|x| x.to_owned()).collect() ];
 
-        while !file_stack.is_empty() {
-            while let Some(line) = file_stack.last_mut().and_then(|x| x.pop()) {
+        while !compiler.file_stack.is_empty() {
+            while let Some(line) = compiler.file_stack.last_mut().and_then(|x| x.pop()) {
                 match parse_line(&line) {
                     Ok(l) => {
                         if let Some(Instruction::Include(path)) = l.instruction {
                             let lines = Self::read_to_string(File::open(path).unwrap()).split('\n').rev().map(|x| x.to_owned()).collect();
-                            file_stack.push(lines);
+                            compiler.file_stack.push(lines);
                         }
                         else {
                             compiler.process(l)?
@@ -218,7 +220,7 @@ impl Compiler {
                     },
                 }
             }
-            file_stack.pop();
+            compiler.file_stack.pop();
         }
 
         compiler.resolve_labels()?;
