@@ -79,6 +79,9 @@ use std::char;
     hexEscapeSequence -> char
         = "\\x" value:$(hexdigit hexdigit) { char::from_u32(u32::from_str_radix(value, 16).unwrap()).unwrap() }
 
+    serializable -> Serializable
+        = b:u8 { Serializable::Byte(b) } / s:string { Serializable::String(s) }
+
 // }}}
 
 // Instructions {{{
@@ -109,9 +112,6 @@ use std::char;
     // }}}
 
     // Special {{{
-
-        serializable -> Serializable
-            = b:u8 { Serializable::Byte(b) } / s:string { Serializable::String(s) }
 
         db -> Instruction
             = "db" ws+ vs:serializable ** comma { Instruction::Db(vs) }
