@@ -47,6 +47,7 @@ pub enum Instruction {
     Db(Vec<Serializable>),
     Ds(u16),
     Org(u16),
+    Include(String),
     Nullary(Opcode),
     UnaryReg(Opcode, Register),
     UnaryAddr(Opcode, Address),
@@ -61,7 +62,7 @@ impl Instruction {
         use self::Instruction::*;
 
         match self {
-            Db(_) | Ds(_) | Org(_) => None,
+            Db(_) | Ds(_) | Org(_) | Include(_) => None,
             Nullary(op)
             | UnaryReg(op, _)
             | UnaryAddr(op, _)

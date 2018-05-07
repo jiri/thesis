@@ -122,8 +122,11 @@ use std::char;
         org -> Instruction
             = "org" ws+ addr:u16 { Instruction::Org(addr) }
 
+        include -> Instruction
+            = "include" ws+ path:string { Instruction::Include(path) }
+
         special -> Instruction
-            = db / ds / org
+            = db / ds / org / include
 
     // }}}
 
@@ -278,10 +281,7 @@ use std::char;
 
     comment = ";" [^\n]*
 
-    line -> Line
+    pub parse_line -> Line
         = ws* l:label_definition? ws* i:instruction? ws* comment? { Line { label: l, instruction: i } }
-
-    pub program -> Vec<Line>
-        = line ** ("\n"+)
 
 // }}}

@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use serde_json;
 
 use grammar::*;
+use std::io::Read;
+use std::fs::File;
 
 pub struct Compiler {
     cursor: u16,
@@ -79,7 +81,7 @@ impl Compiler {
                                 self.write(&[ lo_byte ]);
                             },
                         }
-                    }
+                    },
                 }
             },
         }
@@ -138,6 +140,9 @@ impl Compiler {
                 Org(pos) => {
                     self.cursor = pos;
                 },
+                Include(_) => {
+                    panic!("Processing include in Compiler::process!");
+                }
                 Nullary(opcode) => {
                     self.write(&[ opcode ]);
                 },
@@ -170,6 +175,12 @@ impl Compiler {
         Ok(())
     }
 
+    fn read_to_string<F: Read>(mut file: F) -> String {
+        let mut buffer = String::new();
+        file.read_to_string(&mut buffer).expect("Unable to read the file");
+        buffer
+    }
+
     pub fn compile(source: &str, whitelist: Option<Vec<String>>) -> Result<(Vec<u8>, String), String> {
         let mut compiler = Compiler::new();
 
@@ -188,15 +199,26 @@ impl Compiler {
             compiler.enabled_instructions = Some(map);
         }
 
-        match program(&source) {
-            Ok(lines) => {
-                for line in lines {
-                    compiler.process(line)?;
+        let mut file_stack: Vec<Vec<String>> = vec![ source.split('\n').rev().map(|x| x.to_owned()).collect() ];
+
+        while !file_stack.is_empty() {
+            while let Some(line) = file_stack.last_mut().and_then(|x| x.pop()) {
+                match parse_line(&line) {
+                    Ok(l) => {
+                        if let Some(Instruction::Include(path)) = l.instruction {
+                            let lines = Self::read_to_string(File::open(path).unwrap()).split('\n').rev().map(|x| x.to_owned()).collect();
+                            file_stack.push(lines);
+                        }
+                        else {
+                            compiler.process(l)?
+                        }
+                    },
+                    Err(e) => {
+                        return Err(format!("On {}:{}, expected one of {:?}", e.line, e.column, e.expected));
+                    },
                 }
-            },
-            Err(err) => {
-                return Err(format!("On {}:{}, expected one of {:?}", err.line, err.column, err.expected));
-            },
+            }
+            file_stack.pop();
         }
 
         compiler.resolve_labels()?;
