@@ -34,7 +34,7 @@ use std::char;
         = "0b" s:$(bindigit+) {? u16::from_str_radix(s, 2).map_err(|_| "a 16-bit binary constant") }
 
     u16 -> u16
-        = u16_hex / u16_dec / u16_bin
+        = u16_hex / u16_bin / u16_dec
 
     u8_dec -> u8
         = s:$(digit+) {? u8::from_str_radix(s, 10).map_err(|_| "an 8-bit decimal constant") }
@@ -49,7 +49,7 @@ use std::char;
         = "'" c:asciiChar "'" { c as u8 }
 
     u8 -> u8
-        = u8_hex / u8_dec / u8_bin / u8_char
+        = u8_hex / u8_bin / u8_char / u8_dec
 
     hi_addr -> Value
         = "hi"i ws* "(" ws* a:address ws* ")" { Value::Addr(a, Nibble::High) }
@@ -197,14 +197,14 @@ use std::char;
         xor -> Instruction
             = binaryRegReg<"xor">
 
-        cmp -> Instruction
-            = binaryRegReg<"cmp">
+        cp -> Instruction
+            = binaryRegReg<"cp">
 
-        cmpi -> Instruction
-            = binaryRegIm<"cmpi">
+        cpi -> Instruction
+            = binaryRegIm<"cpi">
 
         arithmetic -> Instruction
-            = add / adc / sub / sbc / inc / dec / and / or / xor / cmp / cmpi
+            = add / adc / sub / sbc / inc / dec / and / or / xor / cp / cpi
 
     // }}}
 
