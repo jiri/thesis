@@ -163,14 +163,6 @@ impl Compiler {
                     self.write(&[ opcode ]);
                     self.write_registers(register0, register1);
                 },
-                BinaryRegAddr(opcode, register, address) => {
-                    self.write(&[ opcode, register.0 ]);
-                    self.write_address(address);
-                },
-                BinaryRegDeref(opcode, register, (high, low)) => {
-                    self.write(&[ opcode, register.0 ]);
-                    self.write_registers(high, low);
-                },
             }
         }
 

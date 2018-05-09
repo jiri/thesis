@@ -53,8 +53,6 @@ pub enum Instruction {
     UnaryAddr(Opcode, Address),
     BinaryRegIm(Opcode, Register, Value),
     BinaryRegReg(Opcode, Register, Register),
-    BinaryRegAddr(Opcode, Register, Address),
-    BinaryRegDeref(Opcode, Register, (Register, Register)),
 }
 
 impl Instruction {
@@ -67,9 +65,7 @@ impl Instruction {
             | UnaryReg(op, _)
             | UnaryAddr(op, _)
             | BinaryRegIm(op, _, _)
-            | BinaryRegReg(op, _, _)
-            | BinaryRegAddr(op, _, _)
-            | BinaryRegDeref(op, _, _) => Some(*op),
+            | BinaryRegReg(op, _, _) => Some(*op),
         }
     }
 }
@@ -86,11 +82,14 @@ lazy_static! {
 
         /* Utility */
         map.insert("nop",   0x00);
-        map.insert("stop",  0x01);
         map.insert("sleep", 0x02);
         map.insert("break", 0x03);
-        map.insert("ei",    0x04);
-        map.insert("di",    0x05);
+        map.insert("sei",   0x04);
+        map.insert("sec",   0x05);
+        map.insert("sez",   0x06);
+        map.insert("cli",   0x07);
+        map.insert("clc",   0x08);
+        map.insert("clz",   0x09);
 
         /* Arithmetic */
         map.insert("add",   0x10);
@@ -123,9 +122,6 @@ lazy_static! {
         map.insert("push",  0x34);
         map.insert("pop",   0x35);
         map.insert("lpm",   0x36);
-        map.insert("ldd",   0x37);
-        map.insert("std",   0x38);
-        map.insert("lpmd",  0x39);
         map.insert("in",    0x3A);
         map.insert("out",   0x3B);
 
