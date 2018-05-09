@@ -93,9 +93,9 @@ lazy_static! {
 
         /* Arithmetic */
         map.insert("add",   0x10);
-        map.insert("addc",  0x11);
+        map.insert("adc",   0x11);
         map.insert("sub",   0x12);
-        map.insert("subc",  0x13);
+        map.insert("sbc",   0x13);
         map.insert("inc",   0x14);
         map.insert("dec",   0x15);
         map.insert("and",   0x16);

@@ -173,14 +173,14 @@ use std::char;
         add -> Instruction
             = binaryRegReg<"add">
 
-        addc -> Instruction
-            = binaryRegReg<"addc">
+        adc -> Instruction
+            = binaryRegReg<"adc">
 
         sub -> Instruction
             = binaryRegReg<"sub">
 
-        subc -> Instruction
-            = binaryRegReg<"subc">
+        sbc -> Instruction
+            = binaryRegReg<"sbc">
 
         inc -> Instruction
             = unaryReg<"inc">
@@ -204,7 +204,7 @@ use std::char;
             = binaryRegIm<"cmpi">
 
         arithmetic -> Instruction
-            = add / addc / sub / subc / inc / dec / and / or / xor / cmp / cmpi
+            = add / adc / sub / sbc / inc / dec / and / or / xor / cmp / cmpi
 
     // }}}
 
