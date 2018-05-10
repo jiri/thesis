@@ -8,7 +8,6 @@ extern crate serde_json;
 mod grammar;
 mod compiler;
 
-use std::io;
 use std::io::prelude::*;
 use std::fs::File;
 
@@ -16,10 +15,31 @@ use clap::{App,Arg};
 
 use compiler::*;
 
-fn read_to_string<F: Read>(mut file: F) -> String {
+fn read_to_string(filename: &str) -> String {
+    let mut file = File::open(filename).unwrap_or_else(|err| {
+        eprintln!("Failed to open file '{}': {}.", filename, err);
+        std::process::exit(1);
+    });
+
     let mut buffer = String::new();
-    file.read_to_string(&mut buffer).expect("Unable to read the file");
+
+    file.read_to_string(&mut buffer).unwrap_or_else(|err| {
+        eprintln!("Failed to read file '{}': {}.", filename, err);
+        std::process::exit(1);
+    });
+
     buffer
+}
+
+fn write_to_file(filename: &str, contents: &[u8]) {
+    let mut file = File::create(filename).unwrap_or_else(|err| {
+        eprintln!("Failed to create file '{}': {}.", filename, err);
+        std::process::exit(1);
+    });
+
+    file.write_all(contents).unwrap_or_else(|err| {
+        eprintln!("Failed to write file '{}': {}.", filename, err);
+    });
 }
 
 fn main() {
@@ -51,42 +71,27 @@ fn main() {
             .help("If set, path to a file containing instruction whitelist")
             .required(false)
             .takes_value(true))
-        .arg(Arg::with_name("stdout")
-            .long("stdout")
-            .help("Output the resulting binary to stdout"))
         .get_matches();
 
-    let filename = matches.value_of("file").expect("File name was not provided");
+    let source = read_to_string(matches.value_of("file").expect("File name was not provided"));
 
-    let source = if filename == "-" {
-        read_to_string(io::stdin())
-    } else {
-        read_to_string(File::open(filename).expect("Unable to open the file"))
-    };
-
-    let whitelist: Option<Vec<String>> = if let Some(whitelist_file) = matches.value_of("whitelist") {
-        let file = File::open(whitelist_file).expect("Unable to open the whitelist");
-        let contents = read_to_string(file);
-        serde_json::from_str(contents.as_str()).ok()
-    } else {
-        None
-    };
+    let whitelist: Option<Vec<String>> =
+        matches.value_of("whitelist")
+            .map(read_to_string)
+            .map(|ref s| {
+                serde_json::from_str(s)
+                    .unwrap_or_else(|err| {
+                        eprintln!("Failed to parse whitelist: {}.", err);
+                        std::process::exit(1);
+                    })
+            });
 
     match Compiler::compile(&source, whitelist) {
         Ok((binary, symbols)) => {
-            let binary_res = if matches.is_present("stdout") {
-                io::stdout().write_all(&binary)
-            } else {
-                let outfile = matches.value_of("output").unwrap_or("out.bin");
-                let mut file = File::create(outfile).expect("Failed to create output file");
-                file.write_all(&binary)
-            };
-
-            binary_res.expect("Failed to write file");
+            write_to_file(matches.value_of("output").unwrap_or("out.bin"), &binary);
 
             if let Some(symfilepath) = matches.value_of("symfile") {
-                let mut file = File::create(symfilepath).expect("Failed to create symfile");
-                file.write_all(symbols.as_bytes()).expect("Failed to write symfile");
+                write_to_file(symfilepath, symbols.as_bytes());
             }
         },
         Err(err) => {
