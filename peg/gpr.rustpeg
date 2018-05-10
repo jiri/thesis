@@ -19,7 +19,7 @@ use std::char;
 // Operands {{{
 
     label -> Label
-        = i:$("."? identifier) { Label::from(i) }
+        = #quiet<i:$("."? identifier) { Label::from(i) }> / #expected("a label")
 
     address -> Address
         = l:label { Address::Label(l) } / u:u16 { Address::Immediate(u) }
@@ -34,7 +34,7 @@ use std::char;
         = "0b" s:$(bindigit+) {? u16::from_str_radix(s, 2).map_err(|_| "a 16-bit binary constant") }
 
     u16 -> u16
-        = u16_hex / u16_bin / u16_dec
+        = #quiet<u16_hex / u16_bin / u16_dec> / #expected("a word literal")
 
     u8_dec -> u8
         = s:$(digit+) {? u8::from_str_radix(s, 10).map_err(|_| "an 8-bit decimal constant") }
@@ -49,7 +49,7 @@ use std::char;
         = "'" c:asciiChar "'" { c as u8 }
 
     u8 -> u8
-        = u8_hex / u8_bin / u8_char / u8_dec
+        = #quiet<u8_hex / u8_bin / u8_char / u8_dec> / #expected("a byte literal")
 
     hi_addr -> Value
         = "hi"i ws* "(" ws* a:address ws* ")" { Value::Addr(a, Nibble::High) }
@@ -58,16 +58,16 @@ use std::char;
         = "lo"i ws* "(" ws* a:address ws* ")" { Value::Addr(a, Nibble::Low) }
 
     value -> Value
-        = u:u8 { Value::Immediate(u) } / hi_addr / lo_addr
+        = #quiet<u:u8 { Value::Immediate(u) } / hi_addr / lo_addr> / #expected("a value")
 
     register -> Register
-        = "R"i v:$(digit*<1,2>) {? Register::new(v.parse::<u8>().unwrap()) }
+        = #quiet<"R"i v:$(digit*<1,2>) {? Register::new(v.parse::<u8>().unwrap()) }> / #expected("a register")
 
     string -> String
-        = '"' s:asciiChar* '"' { s.into_iter().collect() }
+        = #quiet<'"' s:asciiChar* '"' { s.into_iter().collect() }> / #expected("a string literal")
 
     asciiChar -> char
-        = quotedChar / escapeSequence / hexEscapeSequence
+        = #quiet<quotedChar / escapeSequence / hexEscapeSequence> / #expected("an ASCII character")
 
     quotedChar -> char
         = !('"' / "\\") c:$. { c.chars().next().unwrap() }
@@ -283,7 +283,7 @@ use std::char;
     instruction -> Instruction
         = special / loadstore / arithmetic / control / utility
 
-    comment = ";" [^\n]*
+    comment = #quiet<";" [^\n]*>
 
     pub parse_line -> Line
         = ws* l:label_definition? ws* i:instruction? ws* comment? { Line { label: l, instruction: i } }

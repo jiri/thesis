@@ -207,8 +207,15 @@ impl Compiler {
                             compiler.process(l)?
                         }
                     },
-                    Err(e) => {
-                        return Err(format!("On {}:{}, expected one of {:?}", e.line, e.column, e.expected));
+                    Err(mut e) => {
+                        let first = e.expected.iter().nth(0).unwrap().clone();
+                        if e.expected.len() == 1 {
+                            return Err(format!("On {}:{}, expected {}", e.line, e.column, first));
+                        }
+                        else {
+                            let rest: Vec<&str> = e.expected.iter().skip(1).cloned().collect();
+                            return Err(format!("On {}:{}, expected {} or {}", e.line, e.column, rest.join(", "), first));
+                        }
                     },
                 }
             }
