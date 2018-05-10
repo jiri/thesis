@@ -11,5 +11,8 @@ lazy_static = "1.0.0"
 serde = "*"
 serde_json = "*"
 
+[dev-dependencies]
+assert_cli = "*"
+
 [build-dependencies]
 peg = "*"
