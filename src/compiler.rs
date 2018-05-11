@@ -3,8 +3,7 @@ use std::collections::HashMap;
 use serde_json;
 
 use grammar::*;
-use std::io::Read;
-use std::fs::File;
+use util::read_to_string;
 
 pub struct Compiler {
     cursor: u16,
@@ -169,12 +168,6 @@ impl Compiler {
         Ok(())
     }
 
-    fn read_to_string<F: Read>(mut file: F) -> String {
-        let mut buffer = String::new();
-        file.read_to_string(&mut buffer).expect("Unable to read the file");
-        buffer
-    }
-
     pub fn compile(source: &str, whitelist: Option<Vec<String>>) -> Result<(Vec<u8>, String), String> {
         let mut compiler = Compiler::new();
 
@@ -200,7 +193,7 @@ impl Compiler {
                 match parse_line(&line) {
                     Ok(l) => {
                         if let Some(Instruction::Include(path)) = l.instruction {
-                            let lines = Self::read_to_string(File::open(path).unwrap()).split('\n').rev().map(|x| x.to_owned()).collect();
+                            let lines = read_to_string(&path).split('\n').rev().map(|x| x.to_owned()).collect();
                             compiler.file_stack.push(lines);
                         }
                         else {

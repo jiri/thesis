@@ -7,40 +7,12 @@ extern crate serde_json;
 
 mod grammar;
 mod compiler;
-
-use std::io::prelude::*;
-use std::fs::File;
+mod util;
 
 use clap::{App,Arg};
 
 use compiler::*;
-
-fn read_to_string(filename: &str) -> String {
-    let mut file = File::open(filename).unwrap_or_else(|err| {
-        eprintln!("Failed to open file '{}': {}.", filename, err);
-        std::process::exit(1);
-    });
-
-    let mut buffer = String::new();
-
-    file.read_to_string(&mut buffer).unwrap_or_else(|err| {
-        eprintln!("Failed to read file '{}': {}.", filename, err);
-        std::process::exit(1);
-    });
-
-    buffer
-}
-
-fn write_to_file(filename: &str, contents: &[u8]) {
-    let mut file = File::create(filename).unwrap_or_else(|err| {
-        eprintln!("Failed to create file '{}': {}.", filename, err);
-        std::process::exit(1);
-    });
-
-    file.write_all(contents).unwrap_or_else(|err| {
-        eprintln!("Failed to write file '{}': {}.", filename, err);
-    });
-}
+use util::{read_to_string,write_to_file};
 
 fn main() {
     let matches = App::new(env!("CARGO_PKG_NAME"))
