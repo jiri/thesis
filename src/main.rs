@@ -45,7 +45,7 @@ fn main() {
             .takes_value(true))
         .get_matches();
 
-    let source = read_to_string(matches.value_of("file").expect("File name was not provided"));
+    let filename = matches.value_of("file").expect("File name was not provided");
 
     let whitelist: Option<Vec<String>> =
         matches.value_of("whitelist")
@@ -58,7 +58,7 @@ fn main() {
                     })
             });
 
-    match Compiler::compile(&source, whitelist) {
+    match Compiler::compile_file(filename, whitelist) {
         Ok((binary, symbols)) => {
             write_to_file(matches.value_of("output").unwrap_or("out.bin"), &binary);
 

@@ -168,7 +168,17 @@ impl Compiler {
         Ok(())
     }
 
-    pub fn compile(source: &str, whitelist: Option<Vec<String>>) -> Result<(Vec<u8>, String), String> {
+    pub fn compile_file(filename: &str, whitelist: Option<Vec<String>>) -> Result<(Vec<u8>, String), String> {
+        let source = read_to_string(filename);
+        Self::compile(filename, &source, whitelist)
+    }
+
+    #[allow(dead_code)]
+    pub fn compile_source(source: &str, whitelist: Option<Vec<String>>) -> Result<(Vec<u8>, String), String> {
+        Self::compile("-", source, whitelist)
+    }
+
+    fn compile(filename: &str, source: &str, whitelist: Option<Vec<String>>) -> Result<(Vec<u8>, String), String> {
         let mut compiler = Compiler::new();
 
         if let Some(mnemonics) = whitelist {
@@ -179,7 +189,7 @@ impl Compiler {
                     map.insert(*opcode, mnemonic);
                 }
                 else {
-                    return Err(format!("Unknown whitelist instruction '{}'", mnemonic));
+                    return Err(format!("Unknown whitelist instruction '{}' in file '{}'", mnemonic, filename));
                 }
             }
 
@@ -203,11 +213,11 @@ impl Compiler {
                     Err(mut e) => {
                         let first = e.expected.iter().nth(0).unwrap().clone();
                         if e.expected.len() == 1 {
-                            return Err(format!("On {}:{}, expected {}", e.line, e.column, first));
+                            return Err(format!("On {}:{}:{}, expected {}", filename, e.line, e.column, first));
                         }
                         else {
                             let rest: Vec<&str> = e.expected.iter().skip(1).cloned().collect();
-                            return Err(format!("On {}:{}, expected {} or {}", e.line, e.column, rest.join(", "), first));
+                            return Err(format!("On {}:{}:{}, expected {} or {}", filename, e.line, e.column, rest.join(", "), first));
                         }
                     },
                 }
@@ -261,7 +271,7 @@ mod tests {
 
     #[test]
     fn it_resolves_labels() {
-        let binary = Compiler::compile("
+        let binary = Compiler::compile_source("
             nop
             nop
             foo:
@@ -274,7 +284,7 @@ mod tests {
 
     #[test]
     fn it_resolves_local_labels() {
-        let binary = Compiler::compile("
+        let binary = Compiler::compile_source("
             First:
             .loop:
                 jmp .loop
@@ -289,7 +299,7 @@ mod tests {
 
     #[test]
     fn string_literals_are_not_zero_terminated() {
-        let binary = Compiler::compile("
+        let binary = Compiler::compile_source("
             db 0xAA, \"a\", 0xBB
         ", None).expect("Failed to compile code");
 
@@ -298,7 +308,7 @@ mod tests {
 
     #[test]
     fn it_produces_a_symfile() {
-        let binary = Compiler::compile("
+        let binary = Compiler::compile_source("
             org 0x0
             A:
             org 0x100
@@ -316,7 +326,7 @@ mod tests {
 
     #[test]
     fn it_respects_whitelist() {
-        let binary = Compiler::compile("
+        let binary = Compiler::compile_source("
             add R0, R1
             sub R0, R1
         ", Some(vec![ "add".to_owned() ]));
@@ -326,7 +336,7 @@ mod tests {
 
     #[test]
     fn it_resolves_high_low_addr() {
-        let binary = Compiler::compile("
+        let binary = Compiler::compile_source("
             org 0x0
             ldi R0, hi(addr)
             ldi R1, lo(addr)
