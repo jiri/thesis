@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::path::Path;
+use std::path::PathBuf;
 
 use serde_json;
 
@@ -12,7 +14,77 @@ pub struct Compiler {
     needs_label: Vec<(u16, Label, Nibble)>,
     last_major_label: Label,
     enabled_instructions: Option<HashMap<Opcode, String>>,
-    file_stack: Vec<Vec<String>>,
+    file_stack: FileStack,
+}
+
+struct FileStack {
+    filenames: Vec<String>,
+    lines: Vec<Vec<(usize, String)>>,
+}
+
+impl FileStack {
+    fn new() -> Self {
+        Self {
+            filenames: Vec::new(),
+            lines: Vec::new(),
+        }
+    }
+
+    fn init(&mut self, file: &str, lines: Vec<(usize, String)>) {
+        self.filenames.push(file.to_owned());
+        self.lines.push(lines);
+    }
+
+    fn push(&mut self, file: &str) -> Result<(), String> {
+        assert!(!self.filenames.is_empty());
+        assert_eq!(self.filenames.len(), self.lines.len());
+
+        let filepath: String = {
+            let mut path = PathBuf::from(file);
+
+            if !path.is_file() {
+                return Err(format!("Path '{}' doesn't point to a file.", file));
+            }
+
+            if !path.is_absolute() {
+                let current_dir = Path::new(self.filenames.last().unwrap()).parent().unwrap();
+                path = current_dir.join(path);
+            }
+
+            path.to_str().unwrap().to_owned()
+        };
+
+        if self.filenames.contains(&filepath) {
+            return Err(format!("Recursive inclusion detected in file '{}'.", file));
+        }
+
+        let lines = read_to_string(file).split('\n')
+            .enumerate()
+            .map(|(i, x)| (i + 1, x.to_owned()))
+            .collect::<Vec<(usize, String)>>().into_iter()
+            .rev()
+            .collect();
+
+        self.filenames.push(filepath);
+        self.lines.push(lines);
+
+        Ok(())
+    }
+
+    fn pop(&mut self) -> Option<(String, (usize, String))> {
+        if self.filenames.is_empty() {
+            None
+        }
+        else if let Some(line) = self.lines.last_mut().and_then(|x| x.pop()) {
+            let filename = self.filenames.last_mut().expect("Inconsistent state in FileStack");
+            Some((filename.clone(), line))
+        }
+        else {
+            self.filenames.pop();
+            self.lines.pop();
+            self.pop()
+        }
+    }
 }
 
 impl Compiler {
@@ -24,7 +96,7 @@ impl Compiler {
             needs_label: Vec::new(),
             last_major_label: String::new(),
             enabled_instructions: None,
-            file_stack: Vec::new(),
+            file_stack: FileStack::new(),
         }
     }
 
@@ -196,33 +268,36 @@ impl Compiler {
             compiler.enabled_instructions = Some(map);
         }
 
-        compiler.file_stack = vec![ source.split('\n').rev().map(|x| x.to_owned()).collect() ];
+        let init_lines = source.split('\n')
+            .enumerate()
+            .map(|(i, x)| (i + 1, x.to_owned()))
+            .collect::<Vec<(usize, String)>>().into_iter()
+            .rev()
+            .collect();
 
-        while !compiler.file_stack.is_empty() {
-            while let Some(line) = compiler.file_stack.last_mut().and_then(|x| x.pop()) {
-                match parse_line(&line) {
-                    Ok(l) => {
-                        if let Some(Instruction::Include(path)) = l.instruction {
-                            let lines = read_to_string(&path).split('\n').rev().map(|x| x.to_owned()).collect();
-                            compiler.file_stack.push(lines);
-                        }
-                        else {
-                            compiler.process(l)?
-                        }
-                    },
-                    Err(mut e) => {
-                        let first = e.expected.iter().nth(0).unwrap().clone();
-                        if e.expected.len() == 1 {
-                            return Err(format!("On {}:{}:{}, expected {}", filename, e.line, e.column, first));
-                        }
+        compiler.file_stack.init(filename, init_lines);
+
+        while let Some((file, (ln, line))) = compiler.file_stack.pop() {
+            match parse_line(&line) {
+                Ok(l) => {
+                    if let Some(Instruction::Include(path)) = l.instruction {
+                        compiler.file_stack.push(&path)?;
+                    }
+                    else {
+                        compiler.process(l)?
+                    }
+                },
+                Err(mut e) => {
+                    let first = e.expected.iter().nth(0).unwrap().clone();
+                    if e.expected.len() == 1 {
+                        return Err(format!("In {}:{}:{}, expected {}", file, ln, e.column, first));
+                    }
                         else {
                             let rest: Vec<&str> = e.expected.iter().skip(1).cloned().collect();
-                            return Err(format!("On {}:{}:{}, expected {} or {}", filename, e.line, e.column, rest.join(", "), first));
+                            return Err(format!("In {}:{}:{}, expected {} or {}", file, ln, e.column, rest.join(", "), first));
                         }
-                    },
-                }
+                },
             }
-            compiler.file_stack.pop();
         }
 
         compiler.resolve_labels()?;
@@ -264,7 +339,7 @@ mod tests {
 
     #[test]
     fn it_produces_output() {
-        let binary = Compiler::compile("add R0, R1", None).expect("Failed to compile code");
+        let binary = Compiler::compile_source("add R0, R1", None).expect("Failed to compile code");
 
         assert_eq!(binary.0, vec![ 0x10, 0x01 ]);
     }
